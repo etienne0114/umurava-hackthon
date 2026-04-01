@@ -6,6 +6,17 @@ import { Input } from '../common/Input';
 import { TextArea } from '../common/TextArea';
 import { Card } from '../common/Card';
 import { Job } from '@/types';
+import { 
+  Briefcase, 
+  MapPin, 
+  GraduationCap, 
+  Clock, 
+  Target, 
+  Settings2,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
+import clsx from 'clsx';
 
 interface JobFormProps {
   initialData?: Partial<Job>;
@@ -89,158 +100,191 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
   }, [formData, onSubmit, validateForm]);
 
   return (
-    <Card>
-      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-          {initialData ? 'Edit Job' : 'Create New Job'}
-        </h2>
+    <div className="bg-white">
+      <form onSubmit={handleSubmit} className="divide-y divide-gray-100">
+        {/* Section 1: Job Essentials */}
+        <div className="p-8 space-y-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-indigo-50 rounded-xl">
+              <Briefcase className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Job Essentials</h2>
+              <p className="text-sm text-gray-500">Provide the core details for this posting</p>
+            </div>
+          </div>
 
-        <Input
-          label="Job Title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          error={errors.title}
-          required
-        />
+          <div className="space-y-6">
+            <Input
+              label="Job Title"
+              name="title"
+              placeholder="e.g. Senior Full Stack Engineer"
+              value={formData.title}
+              onChange={handleChange}
+              error={errors.title}
+              required
+            />
 
-        <TextArea
-          label="Job Description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          error={errors.description}
-          rows={6}
-          required
-        />
-
-        <Input
-          label="Required Skills (comma-separated)"
-          name="skills"
-          value={formData.skills}
-          onChange={handleChange}
-          error={errors.skills}
-          placeholder="TypeScript, React, Node.js"
-          required
-        />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="Minimum Years of Experience"
-            name="minYears"
-            type="number"
-            value={formData.minYears}
-            onChange={handleChange}
-            min={0}
-            required
-          />
-          <Input
-            label="Maximum Years of Experience"
-            name="maxYears"
-            type="number"
-            value={formData.maxYears || ''}
-            onChange={handleChange}
-            min={0}
-          />
+            <TextArea
+              label="Job Description"
+              name="description"
+              placeholder="Describe the role, impact, and daily responsibilities..."
+              value={formData.description}
+              onChange={handleChange}
+              error={errors.description}
+              rows={8}
+              required
+            />
+          </div>
         </div>
 
-        <Input
-          label="Education Requirements (comma-separated)"
-          name="education"
-          value={formData.education}
-          onChange={handleChange}
-          placeholder="Bachelor's Degree, Computer Science"
-        />
-
-        <Input
-          label="Location"
-          name="location"
-          value={formData.location}
-          onChange={handleChange}
-          placeholder="Remote, Kigali, etc."
-        />
-
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold mb-4">Scoring Weights</h3>
-          {errors.weights && <p className="text-red-600 text-sm mb-2">{errors.weights}</p>}
-          
-          <div className="space-y-4">
+        {/* Section 2: Requirements Grid */}
+        <div className="p-8 bg-gray-50/50 space-y-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-indigo-50 rounded-xl">
+              <Target className="w-5 h-5 text-indigo-600" />
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Skills Weight: {formData.skillsWeight.toFixed(2)}
-              </label>
-              <input
-                type="range"
-                name="skillsWeight"
-                min="0"
-                max="1"
-                step="0.05"
-                value={formData.skillsWeight}
+              <h2 className="text-xl font-bold text-gray-900">Requirements & Logistics</h2>
+              <p className="text-sm text-gray-500">Define the ideal candidate profile</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="col-span-full">
+              <Input
+                label="Required Skills (comma-separated)"
+                name="skills"
+                value={formData.skills}
                 onChange={handleChange}
-                className="w-full"
+                error={errors.skills}
+                placeholder="TypeScript, React, Node.js, AWS..."
+                required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Experience Weight: {formData.experienceWeight.toFixed(2)}
-              </label>
-              <input
-                type="range"
-                name="experienceWeight"
-                min="0"
-                max="1"
-                step="0.05"
-                value={formData.experienceWeight}
-                onChange={handleChange}
-                className="w-full"
-              />
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <Input
+                  label="Min Experience"
+                  name="minYears"
+                  type="number"
+                  value={formData.minYears}
+                  onChange={handleChange}
+                  min={0}
+                  required
+                />
+              </div>
+              <div className="flex-1">
+                <Input
+                  label="Max Experience"
+                  name="maxYears"
+                  type="number"
+                  value={formData.maxYears || ''}
+                  onChange={handleChange}
+                  min={0}
+                  placeholder="Optional"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Education Weight: {formData.educationWeight.toFixed(2)}
-              </label>
-              <input
-                type="range"
-                name="educationWeight"
-                min="0"
-                max="1"
-                step="0.05"
-                value={formData.educationWeight}
-                onChange={handleChange}
-                className="w-full"
-              />
-            </div>
+            <Input
+              label="Location / Work Mode"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="Remote, Kigali, Kigali (Hybrid)"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Relevance Weight: {formData.relevanceWeight.toFixed(2)}
-              </label>
-              <input
-                type="range"
-                name="relevanceWeight"
-                min="0"
-                max="1"
-                step="0.05"
-                value={formData.relevanceWeight}
+            <div className="col-span-full">
+              <Input
+                label="Education Requirements (comma-separated)"
+                name="education"
+                value={formData.education}
                 onChange={handleChange}
-                className="w-full"
+                placeholder="Bachelor's in CS, Master's, etc."
               />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-          <Button type="button" variant="secondary" onClick={onCancel} className="w-full sm:w-auto">
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" isLoading={isSubmitting} className="w-full sm:w-auto">
-            {initialData ? 'Update Job' : 'Create Job'}
-          </Button>
+        {/* Section 3: AI Scoring weights */}
+        <div className="p-8 space-y-6">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-50 rounded-xl">
+                <Settings2 className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">AI Scoring Strategy</h2>
+                <p className="text-sm text-gray-500">Assign importance weights for automated screening</p>
+              </div>
+            </div>
+            {errors.weights ? (
+              <div className="flex items-center gap-2 text-red-600 animate-pulse bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">{errors.weights}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">Weights Balanced (1.0)</span>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { label: 'Core Skills', key: 'skillsWeight', value: formData.skillsWeight },
+              { label: 'Work Experience', key: 'experienceWeight', value: formData.experienceWeight },
+              { label: 'Education Match', key: 'educationWeight', value: formData.educationWeight },
+              { label: 'Profile Relevance', key: 'relevanceWeight', value: formData.relevanceWeight },
+            ].map((weight) => (
+              <div key={weight.key} className="p-4 rounded-2xl bg-gray-50 border border-gray-100/50 hover:border-indigo-200 transition-colors">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-semibold text-gray-700">{weight.label}</span>
+                  <span className="text-indigo-600 text-lg font-bold">{(Number(weight.value) * 100).toFixed(0)}%</span>
+                </div>
+                <input
+                  type="range"
+                  name={weight.key}
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={weight.value}
+                  onChange={handleChange}
+                  className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-700 transition-all"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-8 bg-gray-50/80 flex items-center justify-between border-t border-gray-100">
+          <p className="text-xs text-gray-400 max-w-xs italic">
+            * Once posted, our AI will begin ranking incoming applicants based on these criteria.
+          </p>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+            >
+              Cancel
+            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isSubmitting}
+              className="px-8 py-3 !text-base bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200"
+            >
+              {initialData ? 'Update Job Posting' : 'Publish Job Posting'}
+            </Button>
+          </div>
         </div>
       </form>
-    </Card>
+    </div>
   );
 };
 
