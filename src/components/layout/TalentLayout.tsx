@@ -24,7 +24,7 @@ export const TalentLayout: React.FC<{ children: React.ReactNode }> = ({ children
 
       <div className="flex-1 min-w-0 ml-64 bg-gray-50 min-h-screen flex flex-col">
         {/* Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-10 shadow-sm transition-shadow">
+        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-[100] shadow-sm transition-shadow">
           <SearchDropdown role="talent" placeholder="Search jobs, companies, skills..." />
 
           <div className="flex items-center space-x-4">
