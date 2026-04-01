@@ -121,42 +121,51 @@ function JobRow({
           year: 'numeric',
         })}
       </td>
-      <td className="py-3.5 px-4">
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <td className="py-3.5 px-4 text-right">
+        <div className="flex items-center justify-end gap-1.5 opacity-80 hover:opacity-100 transition-opacity">
           <button
             onClick={() => onView(job._id)}
-            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-            title="View"
+            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+            title="View Details"
           >
-            <Eye size={15} />
+            <Eye size={16} />
           </button>
           <button
             onClick={() => onEdit(job._id)}
-            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-            title="Edit"
+            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+            title="Edit Posting"
           >
-            <Edit2 size={15} />
+            <Edit2 size={16} />
           </button>
           <div className="relative">
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className={clsx(
+                "p-2 rounded-xl transition-all",
+                menuOpen ? "bg-gray-100 text-gray-900" : "text-gray-400 hover:bg-gray-50 search-hover:text-gray-600"
+              )}
             >
-              <MoreVertical size={15} />
+              <MoreVertical size={16} />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-20 min-w-[120px]">
-                <button
-                  onClick={() => {
-                    onDelete(job._id);
-                    setMenuOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-2"
-                >
-                  <Trash2 size={13} />
-                  Delete Job
-                </button>
-              </div>
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setMenuOpen(false)} 
+                />
+                <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl shadow-indigo-100 border border-gray-100 z-20 min-w-[140px] overflow-hidden py-1 animate-in fade-in slide-in-from-top-1">
+                  <button
+                    onClick={() => {
+                      onDelete(job._id);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    Delete Posting
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -256,7 +265,7 @@ function JobsPageContent() {
         </div>
 
         {/* Search + Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/40">
           <div className="px-5 py-4 border-b border-gray-100">
             <div className="relative">
               <Search
