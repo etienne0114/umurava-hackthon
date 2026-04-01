@@ -46,9 +46,9 @@ export const CompanySidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-60 min-h-screen bg-white border-r border-gray-100 flex flex-col sticky top-0 overflow-y-auto">
+    <aside className="fixed left-0 top-0 w-60 h-screen bg-white border-r border-gray-100 flex flex-col z-20 sidebar-scroll overflow-y-auto">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-100">
+      <div className="h-16 px-6 border-b border-gray-100 flex items-center">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
             <span className="text-white font-black text-sm">A</span>
