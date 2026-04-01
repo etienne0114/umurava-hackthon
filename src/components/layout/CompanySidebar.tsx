@@ -1,0 +1,112 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAppDispatch } from '@/store';
+import { logout } from '@/store/slices/authSlice';
+import {
+  LayoutDashboard,
+  Briefcase,
+  Plus,
+  Upload,
+  Brain,
+  LogOut,
+} from 'lucide-react';
+import clsx from 'clsx';
+import toast from 'react-hot-toast';
+
+const navGroups = [
+  {
+    title: 'Overview',
+    items: [
+      { name: 'Dashboard', icon: LayoutDashboard, href: '/company/dashboard' },
+      { name: 'My Jobs',   icon: Briefcase,       href: '/company/jobs' },
+    ],
+  },
+  {
+    title: 'Recruitment',
+    items: [
+      { name: 'Post New Job',      icon: Plus,   href: '/jobs/new' },
+      { name: 'Upload Candidates', icon: Upload, href: '/company/candidates' },
+      { name: 'AI Screening',      icon: Brain,  href: '/company/screening' },
+    ],
+  },
+];
+
+export const CompanySidebar: React.FC = () => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    toast.success('Logged out successfully');
+    router.push('/');
+  };
+
+  return (
+    <aside className="w-60 min-h-screen bg-white border-r border-gray-100 flex flex-col sticky top-0 overflow-y-auto">
+      {/* Logo */}
+      <div className="px-6 py-5 border-b border-gray-100">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
+            <span className="text-white font-black text-sm">A</span>
+          </div>
+          <div>
+            <p className="text-sm font-black text-gray-900 tracking-tight leading-none">AI Recruit</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">Recruiter Portal</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-5 space-y-6">
+        {navGroups.map((group) => (
+          <div key={group.title}>
+            <p className="px-3 mb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              {group.title}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={clsx(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
+                      isActive
+                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    )}
+                  >
+                    <item.icon
+                      size={17}
+                      className={clsx('flex-shrink-0', isActive ? 'text-white' : 'text-gray-400')}
+                    />
+                    <span>{item.name}</span>
+                    {isActive && (
+                      <span className="ml-auto w-1.5 h-1.5 bg-white rounded-full opacity-60" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* Logout only */}
+      <div className="px-3 py-4 border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+        >
+          <LogOut size={17} className="flex-shrink-0" />
+          <span>Log Out</span>
+        </button>
+      </div>
+    </aside>
+  );
+};
