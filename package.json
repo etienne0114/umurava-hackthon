@@ -16,6 +16,7 @@
     "@reduxjs/toolkit": "^2.0.1",
     "axios": "^1.6.5",
     "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "lucide-react": "^1.7.0",

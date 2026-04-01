@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+import { AvatarUpload } from '@/components/profile/AvatarUpload';
 
 // ─── CV Upload Zone ────────────────────────────────────────────────────────────
 
@@ -224,9 +225,11 @@ function ProfileForm() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-center gap-5 mb-5">
           {/* Avatar */}
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow flex-shrink-0">
-            {initials}
-          </div>
+          <AvatarUpload
+            currentAvatar={user?.profile?.avatar}
+            name={form.name}
+            size="md"
+          />
           {/* Name + completion */}
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-gray-900 truncate">{form.name || 'Your Name'}</p>

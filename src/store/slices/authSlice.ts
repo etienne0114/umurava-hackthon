@@ -103,6 +103,22 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
+export const uploadAvatar = createAsyncThunk(
+  'auth/uploadAvatar',
+  async (file: File, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const response = await apiClient.post('/auth/profile/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.error?.message || 'Avatar upload failed');
+    }
+  }
+);
+
 export const uploadResume = createAsyncThunk(
   'auth/uploadResume',
   async (file: File, { rejectWithValue }) => {
@@ -187,6 +203,11 @@ const authSlice = createSlice({
       .addCase(uploadResume.fulfilled, (state, action) => {
         // Update user profile with the AI-parsed data
         state.user = action.payload.user;
+      })
+      .addCase(uploadAvatar.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.profile.avatar = action.payload.avatarUrl;
+        }
       });
   },
 });
