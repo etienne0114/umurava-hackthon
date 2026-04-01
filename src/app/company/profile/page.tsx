@@ -19,9 +19,11 @@ export default function CompanyProfilePage() {
     <ProtectedRoute requiredRole="company">
       <CompanyLayout>
         <div className="max-w-6xl mx-auto">
-          <div className="mb-10">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Recruiter Profile</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage your personal and company information</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">Recruiter Profile</h1>
+              <p className="text-sm text-gray-500 mt-1">Manage your professional identity and company details</p>
+            </div>
           </div>
           
           <ProfileContent />
