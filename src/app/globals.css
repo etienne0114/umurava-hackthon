@@ -99,3 +99,39 @@ body {
     }
   }
 }
+
+/* Professional Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0; /* light gray track-like thumb */
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1; /* slightly darker on hover */
+  background-clip: content-box;
+}
+
+/* Sidebar specific scrollbar if needed */
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+/* Smooth scrolling for the whole document */
+html {
+  scroll-behavior: smooth;
+}
