@@ -45,7 +45,7 @@ export const TalentLayout: React.FC<{ children: React.ReactNode }> = ({ children
             </button>
 
             <div className="flex items-center space-x-2 border-l border-gray-100 pl-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow">
+              <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow">
                 {initials}
               </div>
               <div className="hidden sm:block">

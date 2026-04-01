@@ -185,19 +185,13 @@ export default function TalentDashboard() {
             <div className="flex-1 -mx-4 -mb-2">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={engagement.chartData}>
-                  <defs>
-                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
                   <Area 
                     type="monotone" 
                     dataKey="views" 
                     stroke="#3b82f6" 
                     strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#colorViews)" 
+                    fillOpacity={0.05} 
+                    fill="#3b82f6" 
                   />
                   <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}

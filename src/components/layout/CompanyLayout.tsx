@@ -41,7 +41,7 @@ export const CompanyLayout: React.FC<CompanyLayoutProps> = ({ children }) => {
               <span className="w-2 h-2 bg-red-500 rounded-full absolute top-1.5 right-1.5 border-2 border-white" />
             </button>
             <div className="flex items-center space-x-2 border-l border-gray-200 pl-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow">
+              <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow">
                 {user?.profile?.name
                   ?.split(' ')
                   .map((n) => n[0])

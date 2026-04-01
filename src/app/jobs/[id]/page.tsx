@@ -104,7 +104,7 @@ function JobDetailContent() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0">
+            <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0">
               <Briefcase size={22} className="text-white" />
             </div>
             <div>

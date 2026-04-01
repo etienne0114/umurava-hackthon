@@ -35,7 +35,7 @@ function ApplicantCard({
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {applicant.profile.name
               .split(' ')
               .map((n) => n[0])

@@ -39,10 +39,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-xl shadow-xl">
-        {/* Gradient Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-10 -mx-6 -mt-6 mb-8 rounded-t-lg">
+        {/* Professional Header */}
+        <div className="bg-blue-600 text-white px-8 py-10 -mx-6 -mt-6 mb-8 rounded-t-lg">
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">Welcome Back</h1>
           <p className="text-blue-100 text-base">Sign in to continue to your account</p>
         </div>

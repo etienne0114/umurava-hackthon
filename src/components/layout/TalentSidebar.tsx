@@ -48,7 +48,7 @@ export const TalentSidebar: React.FC = () => {
       {/* Logo / brand */}
       <div className="px-6 py-5 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
             <span className="text-white font-black text-sm">A</span>
           </div>
           <div>

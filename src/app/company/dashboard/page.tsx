@@ -403,7 +403,7 @@ export default function CompanyDashboard() {
               {/* Quick Actions panel */}
               <div className="space-y-4">
                 {/* CTA card */}
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-6 text-white">
+                <div className="bg-indigo-600 rounded-2xl p-6 text-white shadow-sm">
                   <Brain size={28} className="mb-3 opacity-90" />
                   <h3 className="font-bold text-base mb-1">AI Screening</h3>
                   <p className="text-indigo-100 text-xs mb-4 leading-relaxed">

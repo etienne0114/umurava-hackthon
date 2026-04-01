@@ -13,15 +13,8 @@
   }
 
   .animate-shimmer {
-    animation: shimmer 2s infinite linear;
-    background: linear-gradient(
-      to right,
-      #f3f4f6 0%,
-      #e5e7eb 20%,
-      #f3f4f6 40%,
-      #f3f4f6 100%
-    );
-    background-size: 1000px 100%;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: #f3f4f6;
   }
 }
 
