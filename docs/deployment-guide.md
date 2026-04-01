@@ -17,17 +17,17 @@ PORT=5000
 NODE_ENV=production
 
 # Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/recruitment?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<db_username>:<db_password>@cluster.mongodb.net/recruitment?retryWrites=true&w=majority
 
 # Gemini API
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=<your_gemini_api_key>
 
 # CORS
 CORS_ORIGIN=https://your-frontend-domain.vercel.app
 
 # Umurava API (if available)
 UMURAVA_API_URL=https://api.umurava.africa
-UMURAVA_API_KEY=your_umurava_api_key
+UMURAVA_API_KEY=<your_umurava_api_key>
 ```
 
 ### Frontend (.env.local)
