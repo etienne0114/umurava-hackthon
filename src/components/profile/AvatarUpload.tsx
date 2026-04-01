@@ -10,15 +10,17 @@ import clsx from 'clsx';
 interface AvatarUploadProps {
   currentAvatar?: string;
   name: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   onUploadSuccess?: (url: string) => void;
+  className?: string;
 }
 
 export const AvatarUpload: React.FC<AvatarUploadProps> = ({ 
   currentAvatar, 
   name, 
   size = 'lg',
-  onUploadSuccess 
+  onUploadSuccess,
+  className
 }) => {
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +65,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     md: 'w-16 h-16 text-lg rounded-xl',
     lg: 'w-24 h-24 text-2xl rounded-2xl',
     xl: 'w-28 h-28 text-3xl rounded-[2rem]',
+    '2xl': 'w-36 h-36 text-4xl rounded-[2.5rem]',
   };
 
   const iconSizes = {
@@ -70,6 +73,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     md: 16,
     lg: 20,
     xl: 24,
+    '2xl': 32,
   };
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -87,7 +91,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         className={clsx(
           "relative overflow-hidden bg-indigo-600 flex items-center justify-center text-white font-black shadow-xl transition-all",
           sizeClasses[size],
-          !isUploading && "group-hover:shadow-indigo-200 group-hover:scale-[1.02]"
+          !isUploading && "group-hover:shadow-indigo-200 group-hover:scale-[1.02]",
+          className
         )}
       >
         {avatarUrl && !isUploading && !hasError ? (
