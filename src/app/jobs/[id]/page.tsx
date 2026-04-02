@@ -46,18 +46,41 @@ function JobDetailContent() {
   const { session, loading: screeningLoading } = useAppSelector((state) => state.screening);
   const { user } = useAppSelector((state) => state.auth);
   const isCompany = user?.role === 'company';
+  const [hasApplied, setHasApplied] = React.useState(false);
+  const [checkingApplication, setCheckingApplication] = React.useState(false);
 
   useEffect(() => {
     if (jobId) {
       dispatch(fetchJobById(jobId));
-      if (isCompany) dispatch(fetchApplicants({ jobId }));
+      if (isCompany) {
+        dispatch(fetchApplicants({ jobId }));
+      } else if (user?.role === 'talent') {
+        // Check if talent already applied
+        const checkApplicationStatus = async () => {
+          setCheckingApplication(true);
+          try {
+            const res = await apiClient.get('/talent/applications');
+            const applications = res.data.data;
+            const alreadyApplied = applications.some((app: any) => 
+              (typeof app.jobId === 'string' ? app.jobId : app.jobId?._id) === jobId
+            );
+            setHasApplied(alreadyApplied);
+          } catch (err) {
+            console.error('Error checking application status:', err);
+          } finally {
+            setCheckingApplication(false);
+          }
+        };
+        checkApplicationStatus();
+      }
     }
-  }, [dispatch, jobId, isCompany]);
+  }, [dispatch, jobId, isCompany, user]);
 
   const handleApply = async () => {
     try {
       await apiClient.post(`/talent/apply/${jobId}`);
       toast.success('Application submitted!');
+      setHasApplied(true);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to apply');
     }
@@ -201,11 +224,17 @@ function JobDetailContent() {
           ) : (
             <button
               onClick={handleApply}
-              disabled={currentJob.status !== 'active'}
+              disabled={currentJob.status !== 'active' || hasApplied || checkingApplication}
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <CheckCircle size={15} />
-              {currentJob.status === 'active' ? 'Apply Now' : 'Applications Closed'}
+              {hasApplied 
+                ? 'Already Applied' 
+                : checkingApplication 
+                  ? 'Checking status...' 
+                  : currentJob.status === 'active' 
+                    ? 'Apply Now' 
+                    : 'Applications Closed'}
             </button>
           )}
         </div>

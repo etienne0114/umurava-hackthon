@@ -83,48 +83,104 @@ export default function TalentDashboard() {
   const { user } = useAppSelector((state) => state.auth);
   const [stats, setStats] = useState<DashboardStats>({ submissions: 0, pending: 0, hired: 0, declined: 0 });
   const [engagement, setEngagement] = useState<EngagementData>({ totalViews: 0, chartData: [] });
-  const [recommendations, setRecommendations] = useState<Job[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchingJobs, setFetchingJobs] = useState(false);
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+
+  const fetchRecommendations = useCallback(async (tabIndex: number) => {
+    const tabTypes = ['best_match', 'open', 'recent', 'saved'];
+    const type = tabTypes[tabIndex];
+    try {
+      setFetchingJobs(true);
+      const res = await apiClient.get(`/talent/recommendations?type=${type}`);
+      if (res.data.success) {
+        setRecommendations(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    } finally {
+      setFetchingJobs(false);
+    }
+  }, []);
 
   const fetchDashboard = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, engagementRes, recsRes] = await Promise.all([
+      const [statsRes, engagementRes, appsRes] = await Promise.all([
         apiClient.get('/talent/dashboard/stats'),
         apiClient.get('/talent/dashboard/engagement'),
-        apiClient.get('/talent/recommendations'),
+        apiClient.get('/talent/applications'),
       ]);
 
       if (statsRes.data.success) setStats(statsRes.data.data);
       if (engagementRes.data.success) setEngagement(engagementRes.data.data);
-      if (recsRes.data.success) setRecommendations(recsRes.data.data);
+      if (appsRes.data.success) setApplications(appsRes.data.data);
+      
+      // Initial fetch of recommendations
+      await fetchRecommendations(activeTab);
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTab, fetchRecommendations]);
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+  }, []); // Run only once on mount
+
+  useEffect(() => {
+    if (!loading) {
+      fetchRecommendations(activeTab);
+    }
+  }, [activeTab, fetchRecommendations, loading]);
 
   const handleApply = async (jobId: string) => {
     try {
       setApplyingJobId(jobId);
       await apiClient.post(`/talent/apply/${jobId}`);
       toast.success('Application submitted successfully!');
-      // Refresh stats after applying
-      const statsRes = await apiClient.get('/talent/dashboard/stats');
+      
+      // Refresh stats and applications after applying
+      const [statsRes, appsRes] = await Promise.all([
+        apiClient.get('/talent/dashboard/stats'),
+        apiClient.get('/talent/applications'),
+      ]);
       if (statsRes.data.success) setStats(statsRes.data.data);
+      if (appsRes.data.success) setApplications(appsRes.data.data);
     } catch (error: any) {
-      const message = error?.message || 'Failed to submit application';
+      const message = error?.response?.data?.error || error?.message || 'Failed to submit application';
       toast.error(message);
     } finally {
       setApplyingJobId(null);
+    }
+  };
+
+  const handleToggleSave = async (jobId: string, isSaved: boolean) => {
+    try {
+      if (isSaved) {
+        await apiClient.delete(`/talent/saved/${jobId}`);
+        toast.success('Job removed from saved');
+      } else {
+        await apiClient.post(`/talent/saved/${jobId}`);
+        toast.success('Job saved successfully');
+      }
+      
+      // Update local state
+      setRecommendations(prev => prev.map(job => 
+        job._id === jobId ? { ...job, isSaved: !isSaved } : job
+      ));
+
+      // If on saved tab, remove item
+      if (activeTab === 3 && isSaved) {
+        setRecommendations(prev => prev.filter(job => job._id !== jobId));
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Failed to update saved status');
     }
   };
 
@@ -291,11 +347,14 @@ export default function TalentDashboard() {
                           >
                             {job.title}
                           </h3>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full uppercase tracking-tight">
-                            Best Match
+                          <span className={clsx(
+                            "px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-tight",
+                            job.matchScore > 80 ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
+                          )}>
+                            {job.matchScore > 0 ? `${job.matchScore}% Match` : 'New Job'}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-400 font-medium">{job.company || 'Umurava'}</p>
+                        <p className="text-xs text-gray-400 font-medium">{job.company || 'Private Company'}</p>
                         <p className="text-sm text-gray-600 line-clamp-2 max-w-2xl leading-relaxed">
                           {job.description}
                         </p>
@@ -311,27 +370,42 @@ export default function TalentDashboard() {
                         {timeAgo(job.createdAt)}
                       </p>
                       <div className="flex items-center space-x-3">
-                        <button className="p-2.5 border border-gray-200 text-blue-600 rounded-xl hover:bg-blue-50 transition-all">
-                          <Heart className="w-5 h-5" />
+                        <button 
+                          onClick={() => handleToggleSave(job._id, job.isSaved)}
+                          className={clsx(
+                            "p-2.5 border rounded-xl transition-all",
+                            job.isSaved 
+                              ? "bg-red-50 border-red-100 text-red-500 hover:bg-red-100" 
+                              : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-blue-600"
+                          )}
+                        >
+                          <Heart className={clsx("w-5 h-5", job.isSaved && "fill-current")} />
                         </button>
                         <Button 
                           size="md" 
                           className="rounded-xl px-8 font-bold"
                           isLoading={applyingJobId === job._id}
+                          disabled={applications.some(app => (typeof app.jobId === 'string' ? app.jobId : app.jobId?._id) === job._id)}
                           onClick={() => handleApply(job._id)}
                         >
-                          Apply
+                          {applications.some(app => (typeof app.jobId === 'string' ? app.jobId : app.jobId?._id) === job._id) 
+                            ? 'Applied' 
+                            : 'Apply'}
                         </Button>
                       </div>
                     </div>
                   </div>
                 </div>
               ))
+            ) : fetchingJobs ? (
+              <div className="p-12 flex justify-center">
+                <Loader text="Fetching jobs..." />
+              </div>
             ) : (
               <div className="p-12 text-center text-gray-500">
                 <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="font-bold">No recommendations found yet.</p>
-                <p className="text-sm mt-1">Complete your profile to get better job matches!</p>
+                <p className="font-bold">No jobs found in this category.</p>
+                <p className="text-sm mt-1">Try another filter or check back later!</p>
               </div>
             )}
           </div>
