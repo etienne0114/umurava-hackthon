@@ -102,6 +102,22 @@ export interface Applicant {
     fileName?: string;
     uploadedAt?: string;
   };
+  status: 'pending' | 'shortlisted' | 'rejected' | 'hired';
+  assessmentStatus: 'not_sent' | 'sent' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Assessment {
+  _id: string;
+  jobId: string;
+  applicantId: string;
+  questions: Array<{
+    question: string;
+    expectedAnswer: string;
+  }>;
+  status: 'pending' | 'completed' | 'expired';
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }

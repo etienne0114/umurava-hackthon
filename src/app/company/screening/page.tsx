@@ -11,7 +11,8 @@ import {
 } from '@/store/slices/screeningSlice';
 import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { ScreeningResult, Recommendation } from '@/types';
+import { ScreeningResult, Recommendation, Assessment } from '@/types';
+import { apiClient } from '@/store/api/apiClient';
 import {
   Brain,
   Play,
@@ -58,18 +59,199 @@ const RECOMMENDATION_CONFIG: Record<
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="flex justify-between text-xs mb-1">
-        <span className="text-gray-500 font-medium">{label}</span>
-        <span className="font-bold text-gray-700">{value}%</span>
+      <div className="flex justify-between items-end mb-1.5">
+        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">{label}</span>
+        <span className="text-xs font-black text-gray-900">{value}%</span>
       </div>
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className={clsx(
-            'h-full rounded-full transition-all duration-700',
-            value >= 75 ? 'bg-green-500' : value >= 50 ? 'bg-blue-500' : 'bg-yellow-400'
-          )}
+      <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-indigo-500 rounded-full transition-all duration-700"
           style={{ width: `${value}%` }}
         />
+      </div>
+    </div>
+  );
+}
+
+function AssessmentModal({ 
+  assessment, 
+  applicantName, 
+  onClose, 
+  onConfirm 
+}: { 
+  assessment: Assessment; 
+  applicantName: string;
+  onClose: () => void;
+  onConfirm: (editedQuestions: Array<{ question: string; expectedAnswer: string }>) => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [localQuestions, setLocalQuestions] = useState([...assessment.questions]);
+
+  const handleUpdateQuestion = (index: number, field: 'question' | 'expectedAnswer', value: string) => {
+    const updated = [...localQuestions];
+    updated[index] = { ...updated[index], [field]: value };
+    setLocalQuestions(updated);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <div>
+            <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+              <Zap size={20} className="text-indigo-500" />
+              Custom Technical Assessment
+            </h3>
+            <p className="text-sm text-gray-500 mt-1 uppercase tracking-tighter font-bold">Review and refine questions for <span className="text-indigo-600">{applicantName}</span></p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white rounded-xl transition-colors text-gray-400">
+             <XCircle size={24} />
+          </button>
+        </div>
+        
+        <div className="p-8 max-h-[60vh] overflow-y-auto space-y-6">
+          <div className="bg-indigo-50/30 p-6 rounded-2xl border border-indigo-100/50 flex gap-4">
+             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                <Brain size={18} className="text-indigo-500" />
+             </div>
+             <p className="text-xs text-indigo-700/80 font-medium leading-relaxed">
+               Below are the AI-generated questions tailored to this candidate. You can click any question text or expected insight to edit it.
+             </p>
+          </div>
+
+          <div className="space-y-6">
+            {localQuestions.map((q, i) => (
+              <div key={i} className="group relative p-6 bg-white border border-gray-100 rounded-3xl hover:border-indigo-200 transition-all shadow-sm hover:shadow-indigo-100/10">
+                <div className="absolute -left-3 top-6 w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-[10px] font-black shadow-lg shadow-indigo-100 italic-none">
+                  {i + 1}
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Question</label>
+                    <textarea 
+                      value={q.question}
+                      onChange={(e) => handleUpdateQuestion(i, 'question', e.target.value)}
+                      rows={2}
+                      className="w-full bg-gray-50/50 border-none rounded-2xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-100 focus:bg-white outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest pl-1">Expected Insight</label>
+                    <textarea 
+                      value={q.expectedAnswer}
+                      onChange={(e) => handleUpdateQuestion(i, 'expectedAnswer', e.target.value)}
+                      rows={2}
+                      className="w-full bg-emerald-50/20 border-none rounded-2xl px-4 py-3 text-[13px] text-emerald-800/80 italic focus:ring-2 focus:ring-emerald-100 focus:bg-white outline-none transition-all resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-4 bg-white border border-gray-200 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-100 transition-all"
+          >
+            Review Later
+          </button>
+          <button 
+            onClick={async () => {
+              setLoading(true);
+              await onConfirm(localQuestions);
+              setLoading(false);
+            }}
+            disabled={loading}
+            className="flex-[2] py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2rem] shadow-xl shadow-indigo-100 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {loading ? 'AI Updating & Sending...' : 'Confirm & Finalize Test'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BulkActionModal({ 
+  count, 
+  jobTitle, 
+  sampleQuestions,
+  onClose, 
+  onConfirm 
+}: { 
+  count: number; 
+  jobTitle: string; 
+  sampleQuestions?: Assessment['questions'];
+  onClose: () => void; 
+  onConfirm: () => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
+        <div className="p-10 text-center space-y-6">
+          <div className={clsx(
+            "w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto shadow-sm transition-all duration-500",
+            showPreview ? "scale-75 opacity-0 h-0 p-0" : "scale-100"
+          )}>
+            <Zap size={40} className="text-indigo-500" />
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Bulk Technical Validation</h3>
+            <p className="text-sm text-slate-500 leading-relaxed px-2">
+              Generate and send AI-tailored screenings to <span className="font-black text-indigo-600 underline decoration-indigo-200 decoration-4 underline-offset-4">{count} short-listed candidates</span> for <span className="font-bold text-slate-700">{jobTitle}</span>.
+            </p>
+          </div>
+
+          <div className="bg-gray-50/80 rounded-2xl border border-gray-100 text-left overflow-hidden">
+            <button 
+              onClick={() => setShowPreview(!showPreview)}
+              className="w-full p-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:bg-white transition-colors"
+            >
+              <span>{showPreview ? 'Hide Sample Questions' : 'Review Sample Questions'}</span>
+              <ChevronDown size={14} className={clsx("transition-transform", showPreview && "rotate-180")} />
+            </button>
+            {showPreview && sampleQuestions && (
+              <div className="p-4 border-t border-gray-100 max-h-48 overflow-y-auto space-y-3 animate-in slide-in-from-top-2 duration-300">
+                {sampleQuestions.slice(0, 3).map((q, i) => (
+                  <div key={i} className="space-y-1">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter italic-none">Sample Question {i + 1}</p>
+                    <p className="text-[11px] font-bold text-gray-600 leading-snug">{q.question}</p>
+                  </div>
+                ))}
+                <p className="text-[9px] text-gray-400 text-center font-bold uppercase pt-2 border-t border-gray-100">And {sampleQuestions.length - 3} more tailored questions...</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 pt-4">
+            <button 
+              onClick={async () => {
+                setLoading(true);
+                await onConfirm();
+                setLoading(false);
+              }}
+              disabled={loading}
+              className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.25em] shadow-2xl shadow-indigo-100 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {loading ? 'AI Delivering Assessments...' : `Send Tests to all ${count} Talent`}
+            </button>
+            <button 
+              onClick={onClose}
+              disabled={loading}
+              className="w-full py-4 bg-white hover:bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+            >
+              Cancel Batch Operation
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -78,13 +260,23 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 function ResultRow({
   result,
   rank,
+  jobId,
   jobTitle,
+  onStatusUpdate,
 }: {
   result: ScreeningResult;
   rank: number;
+  jobId?: string;
   jobTitle?: string;
+  onStatusUpdate?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [hiring, setHiring] = useState(false);
+  const [generatingTest, setGeneratingTest] = useState(false);
+  const [showAssessment, setShowAssessment] = useState(false);
+  const [showHireConfirm, setShowHireConfirm] = useState(false);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+
   const cfg = RECOMMENDATION_CONFIG[result.evaluation.recommendation];
   const applicant = typeof result.applicantId === 'object' ? result.applicantId : null;
 
@@ -96,6 +288,44 @@ function ResultRow({
       toast.success(`Opening mail client for ${applicant?.profile?.name || 'candidate'}...`);
     } else {
       toast.error('Candidate email contact not found');
+    }
+  };
+
+  const handleHire = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!applicant) return;
+    
+    try {
+      setHiring(true);
+      await apiClient.patch(`/applicants/${applicant._id}/status`, { status: 'hired' });
+      toast.success('Talent marked as hired!');
+      setShowHireConfirm(false);
+      if (onStatusUpdate) onStatusUpdate();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update hiring status');
+    } finally {
+      setHiring(false);
+    }
+  };
+
+  const handleGenerateTest = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!applicant || !jobId) return;
+
+    try {
+      setGeneratingTest(true);
+      const res = await apiClient.post('/assessments/generate', {
+        applicantId: applicant._id,
+        jobId: jobId
+      });
+      
+      setAssessment(res.data.data);
+      setShowAssessment(true);
+      toast.success('AI technical assessment generated!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to generate AI test');
+    } finally {
+      setGeneratingTest(false);
     }
   };
 
@@ -127,9 +357,17 @@ function ResultRow({
               {applicant?.profile?.name?.charAt(0) || 'C'}
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900 leading-none">
-                {applicant?.profile?.name || `Candidate #${result._id.slice(-6)}`}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-gray-900 leading-none">
+                  {applicant?.profile?.name || `Candidate #${result._id.slice(-6)}`}
+                </p>
+                {applicant?.status === 'hired' && (
+                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded uppercase">Hired</span>
+                )}
+                {applicant?.assessmentStatus === 'sent' && (
+                  <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-black rounded uppercase">Test Sent</span>
+                )}
+              </div>
               <p className="text-[11px] text-gray-400 font-medium mt-1 uppercase tracking-tighter">
                 {applicant?.source === 'umurava' ? 'Platform Talent' : 'Manual Upload'}
               </p>
@@ -263,12 +501,92 @@ function ResultRow({
                   <ScoreBar label="Market Relevance" value={result.scoreBreakdown.relevance} />
                 </div>
                 
-                <button 
-                  onClick={handleContact}
-                  className="w-full py-3 bg-indigo-600 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-200 active:scale-95"
-                >
-                  Contact Candidate
-                </button>
+                <div className="pt-2 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={handleGenerateTest}
+                      disabled={generatingTest}
+                      className="flex-1 py-3 bg-white border-2 border-indigo-100 hover:border-indigo-600 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-md disabled:opacity-50"
+                    >
+                      {generatingTest ? 'AI Thinking...' : 'Send Quick Test'}
+                    </button>
+                    <button 
+                      onClick={handleContact}
+                      className="flex-1 py-3 bg-white border-2 border-indigo-100 hover:border-indigo-600 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-md"
+                    >
+                      Email Talent
+                    </button>
+                  </div>
+                  
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setShowHireConfirm(true); }}
+                    disabled={hiring || applicant?.status === 'hired'}
+                    className={clsx(
+                      "w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 disabled:opacity-50",
+                      applicant?.status === 'hired' ? "bg-emerald-500 text-white shadow-emerald-100" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100"
+                    )}
+                  >
+                    {hiring ? 'Processing...' : applicant?.status === 'hired' ? '✓ Hired Successfully' : 'Hire Talent'}
+                  </button>
+                </div>
+
+                {/* Confirm Hiring Modal */}
+                {showHireConfirm && applicant && (
+                  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
+                      <div className="p-10 text-center space-y-6">
+                        <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
+                          <CheckCircle2 size={40} className="text-emerald-500" />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-black text-slate-900 tracking-tight">Confirm Hiring</h3>
+                          <p className="text-sm text-slate-500 leading-relaxed">
+                            Are you absolutely sure you want to mark <span className="font-black text-indigo-600 uppercase tracking-widest">{applicant.profile.name}</span> as hired?
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3 pt-4">
+                          <button 
+                            onClick={handleHire}
+                            disabled={hiring}
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50"
+                          >
+                            {hiring ? 'Confirming...' : 'Yes, Confirm Hire'}
+                          </button>
+                          <button 
+                            onClick={() => setShowHireConfirm(false)}
+                            className="w-full py-4 bg-white hover:bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+                          >
+                            Cancel Decision
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Assessment Modal */}
+                {showAssessment && assessment && (
+                  <AssessmentModal 
+                    assessment={assessment} 
+                    applicantName={applicant?.profile.name || 'Candidate'}
+                    onClose={() => setShowAssessment(false)}
+                    onConfirm={async (editedQuestions) => {
+                      try {
+                        await apiClient.patch(`/assessments/applicant/${applicant?._id}/sent`, {
+                          jobId,
+                          questions: editedQuestions
+                        });
+                        toast.success('Professional test sent to candidate!');
+                        setShowAssessment(false);
+                        if (onStatusUpdate) onStatusUpdate();
+                      } catch (err) {
+                        toast.error('Failed to finalize assessment');
+                      }
+                    }}
+                  />
+                )}
               </div>
             </div>
           </td>
@@ -290,6 +608,8 @@ function ScreeningContent() {
   const [minScore, setMinScore] = useState(0);
   const [starting, setStarting] = useState(false);
   const [polling, setPolling] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [bulkSending, setBulkSending] = useState(false);
 
   useEffect(() => {
     dispatch(fetchJobs());
@@ -356,6 +676,28 @@ function ScreeningContent() {
       toast.success('Re-screening started');
     } catch (err: any) {
       toast.error(err.message || 'Failed to regenerate screening');
+    }
+  };
+
+  const handleBulkSendTests = async () => {
+    if (!selectedJobId || results.length === 0) return;
+
+    try {
+      setBulkSending(true);
+      const applicantIds = results.map(r => typeof r.applicantId === 'object' ? r.applicantId._id : r.applicantId);
+      
+      const res = await apiClient.post('/assessments/bulk-generate', {
+        jobId: selectedJobId,
+        applicantIds
+      });
+
+      toast.success(res.data.message || `AI tests sent to all ${results.length} candidates!`);
+      setShowBulkConfirm(false);
+      dispatch(fetchScreeningResults({ jobId: selectedJobId }));
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to send bulk assessments');
+    } finally {
+      setBulkSending(false);
     }
   };
 
@@ -595,11 +937,33 @@ function ScreeningContent() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1 text-xs text-gray-400">
-                <TrendingUp size={12} />
-                Sorted by AI score
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <TrendingUp size={12} />
+                  Sorted by AI score
+                </div>
+                {results.length > 0 && (
+                  <button 
+                    onClick={() => setShowBulkConfirm(true)}
+                    className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 border border-indigo-100"
+                  >
+                    <Zap size={14} />
+                    Quick Test All
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* Bulk Action Confirmation Modal */}
+            {showBulkConfirm && selectedJob && (
+              <BulkActionModal 
+                count={results.length}
+                jobTitle={selectedJob.title}
+                sampleQuestions={results[0]?.evaluation?.reasoning ? [{ question: 'High-Fidelity AI Technical Validation', expectedAnswer: 'Questions are personalized for each talent based on their profile and your job definition.' }] : undefined} // Fallback or first sample
+                onClose={() => setShowBulkConfirm(false)}
+                onConfirm={handleBulkSendTests}
+              />
+            )}
 
             {loading ? (
               <div className="py-24 text-center">
@@ -639,7 +1003,13 @@ function ScreeningContent() {
                             key={result._id} 
                             result={result} 
                             rank={result.rank} 
+                            jobId={selectedJob?._id}
                             jobTitle={selectedJob?.title}
+                            onStatusUpdate={() => {
+                              if (selectedJobId) {
+                                dispatch(fetchScreeningResults({ jobId: selectedJobId }));
+                              }
+                            }}
                           />
                         ))}
                     </tbody>
