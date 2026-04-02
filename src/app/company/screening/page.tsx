@@ -78,13 +78,26 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 function ResultRow({
   result,
   rank,
+  jobTitle,
 }: {
   result: ScreeningResult;
   rank: number;
+  jobTitle?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = RECOMMENDATION_CONFIG[result.evaluation.recommendation];
   const applicant = typeof result.applicantId === 'object' ? result.applicantId : null;
+
+  const handleContact = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const email = applicant?.profile?.email;
+    if (email) {
+      window.location.href = `mailto:${email}?subject=Job Application: ${jobTitle || 'Opportunity'} at Umurava`;
+      toast.success(`Opening mail client for ${applicant?.profile?.name || 'candidate'}...`);
+    } else {
+      toast.error('Candidate email contact not found');
+    }
+  };
 
   return (
     <>
@@ -250,7 +263,10 @@ function ResultRow({
                   <ScoreBar label="Market Relevance" value={result.scoreBreakdown.relevance} />
                 </div>
                 
-                <button className="w-full py-3 bg-indigo-600 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-200">
+                <button 
+                  onClick={handleContact}
+                  className="w-full py-3 bg-indigo-600 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-200 active:scale-95"
+                >
                   Contact Candidate
                 </button>
               </div>
@@ -619,7 +635,12 @@ function ScreeningContent() {
                         .slice()
                         .sort((a, b) => a.rank - b.rank)
                         .map((result) => (
-                          <ResultRow key={result._id} result={result} rank={result.rank} />
+                          <ResultRow 
+                            key={result._id} 
+                            result={result} 
+                            rank={result.rank} 
+                            jobTitle={selectedJob?.title}
+                          />
                         ))}
                     </tbody>
                   </table>
