@@ -4,6 +4,9 @@ import React, { useState, useCallback, memo } from 'react';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { TextArea } from '../common/TextArea';
+import { RichTextEditor } from '../common/RichTextEditor';
+import { TagInput } from '../common/TagInput';
+import { Modal } from '../common/Modal';
 import { Card } from '../common/Card';
 import { Job } from '@/types';
 import { 
@@ -14,7 +17,8 @@ import {
   Target, 
   Settings2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -28,10 +32,10 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
-    skills: initialData?.requirements?.skills?.join(', ') || '',
+    skills: initialData?.requirements?.skills || '',
     minYears: initialData?.requirements?.experience?.minYears || 0,
     maxYears: initialData?.requirements?.experience?.maxYears || undefined,
-    education: initialData?.requirements?.education?.join(', ') || '',
+    education: initialData?.requirements?.education || [],
     location: initialData?.requirements?.location || '',
     skillsWeight: initialData?.weights?.skills || 0.4,
     experienceWeight: initialData?.weights?.experience || 0.3,
@@ -39,6 +43,8 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
     relevanceWeight: initialData?.weights?.relevance || 0.1,
     status: initialData?.status || 'draft',
   });
+
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,12 +59,14 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
 
     if (!formData.title.trim()) newErrors.title = 'Title is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.skills.trim()) newErrors.skills = 'At least one skill is required';
+    if (!formData.skills || formData.skills.trim().length === 0 || formData.skills === '<p></p>') {
+      newErrors.skills = 'Skills requirements are required';
+    }
 
-    const weightSum = formData.skillsWeight + formData.experienceWeight + 
-                      formData.educationWeight + formData.relevanceWeight;
+    const weightSum = Number(formData.skillsWeight) + Number(formData.experienceWeight) + 
+                      Number(formData.educationWeight) + Number(formData.relevanceWeight);
     if (Math.abs(weightSum - 1.0) > 0.01) {
-      newErrors.weights = 'Weights must sum to 1.0';
+      newErrors.weights = `Weights must sum to 1.0 (current: ${weightSum.toFixed(2)})`;
     }
 
     setErrors(newErrors);
@@ -76,19 +84,19 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
         title: formData.title,
         description: formData.description,
         requirements: {
-          skills: formData.skills.split(',').map((s) => s.trim()).filter(Boolean),
+          skills: formData.skills,
           experience: {
             minYears: Number(formData.minYears),
             maxYears: formData.maxYears ? Number(formData.maxYears) : undefined,
           },
-          education: formData.education.split(',').map((e) => e.trim()).filter(Boolean),
+          education: formData.education,
           location: formData.location || undefined,
         },
         weights: {
-          skills: formData.skillsWeight,
-          experience: formData.experienceWeight,
-          education: formData.educationWeight,
-          relevance: formData.relevanceWeight,
+          skills: Number(formData.skillsWeight),
+          experience: Number(formData.experienceWeight),
+          education: Number(formData.educationWeight),
+          relevance: Number(formData.relevanceWeight),
         },
         status: formData.status,
       });
@@ -125,14 +133,12 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
               required
             />
 
-            <TextArea
+            <RichTextEditor
               label="Job Description"
-              name="description"
-              placeholder="Describe the role, impact, and daily responsibilities..."
               value={formData.description}
-              onChange={handleChange}
+              onChange={(content) => setFormData(prev => ({ ...prev, description: content }))}
+              placeholder="Describe the role, impact, and daily responsibilities..."
               error={errors.description}
-              rows={8}
               required
             />
           </div>
@@ -152,15 +158,94 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="col-span-full">
-              <Input
-                label="Required Skills (comma-separated)"
-                name="skills"
-                value={formData.skills}
-                onChange={handleChange}
-                error={errors.skills}
-                placeholder="TypeScript, React, Node.js, AWS..."
-                required
-              />
+              <label className="text-sm font-bold text-gray-700 block mb-2">
+                Required Skills <span className="text-red-500">*</span>
+              </label>
+              
+              <div className={clsx(
+                "relative group cursor-pointer rounded-2xl border transition-all overflow-hidden bg-gray-50/50 hover:bg-white",
+                errors.skills 
+                  ? "border-red-300 ring-4 ring-red-50" 
+                  : "border-gray-200 hover:border-indigo-300 shadow-sm"
+              )}>
+                <div className={clsx(
+                  "p-4 transition-all duration-300",
+                  formData.skills && formData.skills !== '<p></p>' ? "min-h-[60px]" : "py-3"
+                )}>
+                  {formData.skills && formData.skills !== '<p></p>' ? (
+                    <div 
+                      className="prose prose-sm max-w-none text-gray-600 line-clamp-4"
+                      dangerouslySetInnerHTML={{ __html: formData.skills }}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-3 text-gray-400">
+                      <div className="p-2 bg-white rounded-lg border border-gray-100 shadow-sm">
+                        <Plus className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-500">Define technical requirements</p>
+                        <p className="text-xs">Assessment basis for AI screening</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-3 bg-white border-t border-gray-100 flex items-center justify-between">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
+                    Rich Text Assessment Basis
+                  </p>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="!py-1.5 !px-3 !text-xs !bg-indigo-50 !text-indigo-600 hover:!bg-indigo-100 border-none shadow-none flex items-center gap-1.5 font-bold"
+                    onClick={() => setIsSkillsModalOpen(true)}
+                  >
+                    <Plus size={12} strokeWidth={3} />
+                    {formData.skills && formData.skills !== '<p></p>' ? 'Update Skills' : 'Add Skills'}
+                  </Button>
+                </div>
+                
+                {/* Clickable Overlay */}
+                <div 
+                  className="absolute inset-0 cursor-pointer"
+                  onClick={() => setIsSkillsModalOpen(true)}
+                />
+              </div>
+
+              {errors.skills && (
+                <p className="mt-1.5 text-xs font-semibold text-red-500 ml-1">
+                  {errors.skills}
+                </p>
+              )}
+
+              {/* Skills Editor Modal */}
+              <Modal
+                isOpen={isSkillsModalOpen}
+                onClose={() => setIsSkillsModalOpen(false)}
+                title="Define Technical Requirements"
+                subtitle="List the core skills, tools, and expertise needed for this role. Use bullets for clarity."
+              >
+                <div className="space-y-6">
+                  <RichTextEditor
+                    value={formData.skills}
+                    onChange={(content) => setFormData(prev => ({ ...prev, skills: content }))}
+                    placeholder="e.g. 
+• Proficient in TypeScript and React
+• Experience with Node.js and MongoDB
+• Knowledge of AWS Cloud services..."
+                  />
+                  <div className="flex justify-end pt-4 border-t border-gray-100">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => setIsSkillsModalOpen(false)}
+                      className="px-8"
+                    >
+                      Save Requirements
+                    </Button>
+                  </div>
+                </div>
+              </Modal>
             </div>
 
             <div className="flex items-end gap-3">
@@ -197,12 +282,11 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
             />
 
             <div className="col-span-full">
-              <Input
-                label="Education Requirements (comma-separated)"
-                name="education"
-                value={formData.education}
-                onChange={handleChange}
-                placeholder="Bachelor's in CS, Master's, etc."
+              <TagInput
+                label="Education Requirements"
+                tags={formData.education}
+                onChange={(tags) => setFormData(prev => ({ ...prev, education: tags }))}
+                placeholder="Type requirement and hit Enter (e.g. Bachelor's in CS, Master's, CPA)"
               />
             </div>
           </div>
