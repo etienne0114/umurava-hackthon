@@ -23,9 +23,15 @@ function EditJobContent() {
   }, [dispatch, jobId]);
 
   useEffect(() => {
-    if (currentJob && user && currentJob.createdBy && currentJob.createdBy !== user.id) {
-      toast.error('You do not have permission to edit this job');
-      router.push('/company/jobs');
+    if (currentJob && user) {
+      const creatorId = typeof currentJob.createdBy === 'object' 
+        ? (currentJob.createdBy as any)._id || (currentJob.createdBy as any).id
+        : currentJob.createdBy;
+      
+      if (creatorId && creatorId !== user.id) {
+        toast.error('You do not have permission to edit this job');
+        router.push('/company/jobs');
+      }
     }
   }, [currentJob, user, router]);
 
