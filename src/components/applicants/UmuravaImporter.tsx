@@ -34,9 +34,13 @@ export const UmuravaImporter: React.FC<UmuravaImporterProps> = ({
         .map((id) => id.trim())
         .filter(Boolean);
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/applicants/import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ jobId, profileIds: ids }),
       });
 
@@ -46,7 +50,7 @@ export const UmuravaImporter: React.FC<UmuravaImporterProps> = ({
       }
 
       const result = await response.json();
-      onImportComplete(result.data);
+      onImportComplete(Array.isArray(result.data) ? result.data : []);
       setProfileIds('');
     } catch (error: any) {
       onError(error.message);

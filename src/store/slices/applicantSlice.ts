@@ -40,13 +40,20 @@ export const importFromUmurava = createAsyncThunk(
 
 export const fetchApplicants = createAsyncThunk(
   'applicants/fetchAll',
-  async ({ jobId, limit, offset }: { jobId: string; limit?: number; offset?: number }) => {
-    const params = new URLSearchParams({ jobId });
-    if (limit) params.append('limit', limit.toString());
-    if (offset) params.append('offset', offset.toString());
+  async (
+    { jobId, limit, offset }: { jobId: string; limit?: number; offset?: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const params = new URLSearchParams({ jobId });
+      if (limit) params.append('limit', limit.toString());
+      if (offset) params.append('offset', offset.toString());
 
-    const response = await apiClient.get(`/applicants?${params.toString()}`);
-    return response.data.data;
+      const response = await apiClient.get(`/applicants?${params.toString()}`);
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    } catch (err: any) {
+      return rejectWithValue(err.message || 'Failed to fetch applicants');
+    }
   }
 );
 
@@ -104,6 +111,7 @@ const applicantSlice = createSlice({
       .addCase(fetchApplicants.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.applicants = [];
       })
       .addCase(fetchApplicants.fulfilled, (state, action: PayloadAction<Applicant[]>) => {
         state.loading = false;
@@ -111,7 +119,8 @@ const applicantSlice = createSlice({
       })
       .addCase(fetchApplicants.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to fetch applicants';
+        state.applicants = [];
+        state.error = (action.payload as string) || action.error.message || 'Failed to fetch applicants';
       })
       .addCase(deleteApplicant.fulfilled, (state, action: PayloadAction<string>) => {
         state.applicants = state.applicants.filter((app) => app._id !== action.payload);

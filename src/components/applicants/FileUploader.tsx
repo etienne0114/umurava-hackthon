@@ -60,8 +60,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       formData.append('jobId', jobId);
       formData.append('file', file);
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/applicants/upload`, {
         method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData,
       });
 
@@ -72,7 +74,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
       const result = await response.json();
       setProgress(100);
-      onUploadComplete(result.data);
+      onUploadComplete(Array.isArray(result.data) ? result.data : []);
       setFile(null);
     } catch (error: any) {
       onError(error.message);
