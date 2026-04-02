@@ -73,33 +73,10 @@ export default function CompanyDashboard() {
   const fetchDashboard = useCallback(async () => {
     try {
       setLoading(true);
-      const jobsRes = await apiClient.get('/jobs');
-      const jobs: Job[] = jobsRes.data.data || [];
-
-      const totalApplicants = jobs.reduce((sum, j) => sum + (j.applicantCount || 0), 0);
-      const activeJobs = jobs.filter((j) => j.status === 'active').length;
-      const draftJobs = jobs.filter((j) => j.status === 'draft').length;
-      const closedJobs = jobs.filter((j) => j.status === 'closed').length;
-      const completedScreenings = jobs.filter((j) => j.screeningStatus === 'completed').length;
-      const inProgressScreenings = jobs.filter((j) => j.screeningStatus === 'in_progress').length;
-
-      const chartData = jobs.slice(0, 8).map((j) => ({
-        name: j.title.length > 16 ? j.title.slice(0, 16) + '…' : j.title,
-        applicants: j.applicantCount || 0,
-        status: j.status,
-      }));
-
-      setData({
-        totalJobs: jobs.length,
-        activeJobs,
-        draftJobs,
-        closedJobs,
-        totalApplicants,
-        completedScreenings,
-        inProgressScreenings,
-        recentJobs: jobs.slice(0, 6),
-        jobsChartData: chartData,
-      });
+      const res = await apiClient.get('/company/dashboard/stats');
+      if (res.data.success) {
+        setData(res.data.data);
+      }
     } catch {
       toast.error('Failed to load dashboard data');
     } finally {
