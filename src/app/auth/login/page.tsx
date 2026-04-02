@@ -30,7 +30,7 @@ export default function LoginPage() {
     try {
       const result = await dispatch(login(formData)).unwrap();
       toast.success('Login successful!');
-      router.push(result.user.role === 'talent' ? '/talent/dashboard' : '/jobs');
+      router.push(result.user.role === 'talent' ? '/talent/dashboard' : '/company/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'Login failed');
     } finally {

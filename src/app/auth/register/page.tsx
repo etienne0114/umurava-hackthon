@@ -58,7 +58,7 @@ export default function RegisterPage() {
       ).unwrap();
 
       toast.success('Registration successful!');
-      router.push(result.user.role === 'talent' ? '/talent/dashboard' : '/jobs');
+      router.push(result.user.role === 'talent' ? '/talent/dashboard' : '/company/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'Registration failed');
     } finally {
