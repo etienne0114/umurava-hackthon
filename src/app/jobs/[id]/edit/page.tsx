@@ -68,22 +68,27 @@ function EditJobContent() {
 
   return (
     <CompanyLayout>
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-6">
-          <button
+      <div className="max-w-5xl mx-auto pb-12">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Edit Job</h1>
+            <p className="text-sm text-gray-500 mt-1">Update the details for this job posting</p>
+          </div>
+          <button 
             onClick={() => router.back()}
-            className="text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors mb-4 flex items-center gap-1"
+            className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
           >
-            ← Back
+            &larr; Back to Listings
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Job</h1>
-          <p className="text-sm text-gray-500 mt-1">Update the details for this job posting</p>
         </div>
-        <JobForm
-          initialData={currentJob}
-          onSubmit={handleSubmit}
-          onCancel={() => router.back()}
-        />
+        
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
+          <JobForm
+            initialData={currentJob}
+            onSubmit={handleSubmit}
+            onCancel={() => router.back()}
+          />
+        </div>
       </div>
     </CompanyLayout>
   );
