@@ -75,7 +75,7 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
   );
 }
 
-function ResultCard({
+function ResultRow({
   result,
   rank,
 }: {
@@ -84,135 +84,181 @@ function ResultCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = RECOMMENDATION_CONFIG[result.evaluation.recommendation];
+  const applicant = typeof result.applicantId === 'object' ? result.applicantId : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div
-        className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
-        onClick={() => setExpanded((v) => !v)}
+    <>
+      <tr 
+        className={clsx(
+          "group cursor-pointer transition-all hover:bg-gray-50",
+          expanded ? "bg-gray-50/80" : "bg-white"
+        )}
+        onClick={() => setExpanded(!expanded)}
       >
-        {/* Rank badge */}
-        <div
-          className={clsx(
-            'w-9 h-9 rounded-xl flex items-center justify-center font-black text-base flex-shrink-0',
-            rank === 1
-              ? 'bg-yellow-100 text-yellow-600'
-              : rank === 2
-              ? 'bg-gray-100 text-gray-600'
-              : rank === 3
-              ? 'bg-orange-100 text-orange-600'
-              : 'bg-indigo-50 text-indigo-600'
-          )}
-        >
-          #{rank}
-        </div>
-
-        {/* Applicant info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-bold text-gray-900">Candidate #{result.applicantId.slice(-6)}</p>
-            <span className={clsx('px-2 py-0.5 rounded-full text-[11px] font-semibold', cfg.color)}>
-              {cfg.icon}
-              {cfg.label}
-            </span>
+        {/* Rank */}
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className={clsx(
+            "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm",
+            rank === 1 ? "bg-yellow-100 text-yellow-700 shadow-yellow-100/50" :
+            rank === 2 ? "bg-slate-100 text-slate-700" :
+            rank === 3 ? "bg-orange-100 text-orange-700" : "bg-gray-50 text-gray-400"
+          )}>
+            #{rank}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{result.evaluation.reasoning}</p>
-        </div>
+        </td>
 
-        {/* Score ring */}
-        <div className="flex-shrink-0 text-right">
-          <div
-            className={clsx(
-              'text-2xl font-black leading-none',
-              result.matchScore >= 75
-                ? 'text-green-600'
-                : result.matchScore >= 50
-                ? 'text-blue-600'
-                : 'text-yellow-600'
-            )}
-          >
-            {result.matchScore}
+        {/* Candidate */}
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+              {applicant?.profile?.name?.charAt(0) || 'C'}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900 leading-none">
+                {applicant?.profile?.name || `Candidate #${result._id.slice(-6)}`}
+              </p>
+              <p className="text-[11px] text-gray-400 font-medium mt-1 uppercase tracking-tighter">
+                {applicant?.source === 'umurava' ? 'Platform Talent' : 'Manual Upload'}
+              </p>
+            </div>
           </div>
-          <div className="text-[10px] text-gray-400 font-medium">/100</div>
-        </div>
+        </td>
 
-        <ChevronDown
-          size={16}
-          className={clsx(
-            'text-gray-400 flex-shrink-0 transition-transform',
-            expanded && 'rotate-180'
-          )}
-        />
-      </div>
+        {/* Match Score */}
+        <td className="px-6 py-4 whitespace-nowrap w-48">
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-end">
+              <span className={clsx(
+                "text-sm font-black",
+                result.matchScore >= 75 ? "text-emerald-600" :
+                result.matchScore >= 50 ? "text-blue-600" : "text-amber-600"
+              )}>
+                {result.matchScore}%
+              </span>
+              <span className="text-[10px] text-gray-300 font-bold uppercase">Similarity</span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                className={clsx(
+                  "h-full rounded-full transition-all duration-1000 ease-out",
+                  result.matchScore >= 75 ? "bg-emerald-500" :
+                  result.matchScore >= 50 ? "bg-blue-500" : "bg-amber-500"
+                )}
+                style={{ width: `${result.matchScore}%` }}
+              />
+            </div>
+          </div>
+        </td>
 
+        {/* Recommendation */}
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={clsx(
+            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold shadow-sm whitespace-nowrap",
+            cfg.color
+          )}>
+            {cfg.icon}
+            {cfg.label}
+          </span>
+        </td>
+
+        {/* Action */}
+        <td className="px-6 py-4 whitespace-nowrap text-right">
+          <button className="p-2 rounded-xl text-gray-400 hover:bg-white hover:text-indigo-600 transition-all shadow-none hover:shadow-sm">
+            <ChevronDown 
+              size={18} 
+              className={clsx("transition-transform duration-300", expanded && "rotate-180")} 
+            />
+          </button>
+        </td>
+      </tr>
+
+      {/* Expanded Details Panel */}
       {expanded && (
-        <div className="border-t border-gray-100 px-5 py-4 bg-gray-50 space-y-4">
-          {/* Score breakdown */}
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Score Breakdown
-            </p>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-              <ScoreBar label="Skills Match" value={result.scoreBreakdown.skills} />
-              <ScoreBar label="Experience" value={result.scoreBreakdown.experience} />
-              <ScoreBar label="Education" value={result.scoreBreakdown.education} />
-              <ScoreBar label="Relevance" value={result.scoreBreakdown.relevance} />
-            </div>
-          </div>
+        <tr>
+          <td colSpan={5} className="px-6 py-8 bg-white border-t border-gray-100 shadow-inner">
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Left Column: AI Reasoning */}
+              <div className="lg:col-span-2 space-y-6">
+                <div>
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <Brain size={14} className="text-indigo-500" />
+                    AI Match Reasoning
+                  </h4>
+                  <p className="text-sm text-gray-600 leading-relaxed bg-gray-50/50 p-6 rounded-2xl border border-gray-100 transition-all group-hover:bg-white">
+                    {result.evaluation.reasoning}
+                  </p>
+                </div>
 
-          {/* Strengths */}
-          {result.evaluation.strengths.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-2">
-                Strengths
-              </p>
-              <ul className="space-y-1">
-                {result.evaluation.strengths.map((s, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                    <CheckCircle2 size={13} className="text-green-500 mt-0.5 flex-shrink-0" />
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div className="space-y-3">
+                    <h5 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
+                      <CheckCircle2 size={12} />
+                      Key Strengths
+                    </h5>
+                    <ul className="space-y-2">
+                      {result.evaluation.strengths.slice(0, 4).map((s, i) => (
+                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-          {/* Gaps */}
-          {result.evaluation.gaps.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wider mb-2">
-                Gaps
-              </p>
-              <ul className="space-y-1">
-                {result.evaluation.gaps.map((g, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                    <AlertTriangle size={13} className="text-yellow-500 mt-0.5 flex-shrink-0" />
-                    {g}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                  <div className="space-y-3">
+                    <h5 className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-1.5">
+                      <AlertTriangle size={12} />
+                      Potential Gaps
+                    </h5>
+                    <ul className="space-y-2">
+                      {result.evaluation.gaps.slice(0, 4).map((g, i) => (
+                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1 flex-shrink-0" />
+                          {g}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-          {/* Risks */}
-          {result.evaluation.risks.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-2">
-                Risks
-              </p>
-              <ul className="space-y-1">
-                {result.evaluation.risks.map((r, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                    <XCircle size={13} className="text-red-400 mt-0.5 flex-shrink-0" />
-                    {r}
-                  </li>
-                ))}
-              </ul>
+                  <div className="space-y-3">
+                    <h5 className="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-1.5">
+                      <XCircle size={12} />
+                      Risk Factors
+                    </h5>
+                    <ul className="space-y-2">
+                      {result.evaluation.risks.slice(0, 4).map((r, i) => (
+                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 flex-shrink-0" />
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Score Metrics */}
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                  <BarChart3 size={14} className="text-indigo-500" />
+                  Performance Metrics
+                </h4>
+                <div className="bg-gray-50/50 rounded-2xl border border-gray-100 p-6 space-y-5 transition-all group-hover:bg-white">
+                  <ScoreBar label="Skills Match" value={result.scoreBreakdown.skills} />
+                  <ScoreBar label="Professional Experience" value={result.scoreBreakdown.experience} />
+                  <ScoreBar label="Education Background" value={result.scoreBreakdown.education} />
+                  <ScoreBar label="Market Relevance" value={result.scoreBreakdown.relevance} />
+                </div>
+                
+                <button className="w-full py-3 bg-indigo-600 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-200">
+                  Contact Candidate
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+          </td>
+        </tr>
       )}
-    </div>
+    </>
   );
 }
 
@@ -220,7 +266,10 @@ function ScreeningContent() {
   const dispatch = useAppDispatch();
   const { jobs } = useAppSelector((state) => state.jobs);
   const { results, session, loading } = useAppSelector((state) => state.screening);
-  const [selectedJobId, setSelectedJobId] = useState('');
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const initialJobId = searchParams?.get('jobId') || '';
+
+  const [selectedJobId, setSelectedJobId] = useState(initialJobId);
   const [topN, setTopN] = useState(10);
   const [minScore, setMinScore] = useState(0);
   const [starting, setStarting] = useState(false);
@@ -229,6 +278,13 @@ function ScreeningContent() {
   useEffect(() => {
     dispatch(fetchJobs());
   }, [dispatch]);
+
+  // Update selection if URL changes
+  useEffect(() => {
+    if (initialJobId && initialJobId !== selectedJobId) {
+      setSelectedJobId(initialJobId);
+    }
+  }, [initialJobId]);
 
   // Poll session status when in_progress
   useEffect(() => {
@@ -307,7 +363,7 @@ function ScreeningContent() {
 
   return (
     <CompanyLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-8 px-4 pb-12">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">AI Screening</h1>
@@ -449,59 +505,57 @@ function ScreeningContent() {
 
         {/* Summary stats (only when results exist) */}
         {results.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {(
               [
                 {
-                  label: 'Avg Score',
-                  value: summaryStats.avgScore,
-                  color: 'text-indigo-600',
-                  bg: 'bg-indigo-50',
-                  icon: <BarChart3 size={16} className="text-indigo-500" />,
+                  label: 'Average Match',
+                  value: `${summaryStats.avgScore}%`,
+                  color: 'text-gray-900',
+                  icon: <BarChart3 size={18} className="text-indigo-500" />,
                 },
                 {
                   label: 'Highly Rec.',
                   value: summaryStats.highly_recommended,
-                  color: 'text-green-600',
-                  bg: 'bg-green-50',
-                  icon: <CheckCircle2 size={16} className="text-green-500" />,
+                  color: 'text-gray-900',
+                  icon: <CheckCircle2 size={18} className="text-emerald-500" />,
                 },
                 {
                   label: 'Recommended',
                   value: summaryStats.recommended,
-                  color: 'text-blue-600',
-                  bg: 'bg-blue-50',
-                  icon: <Star size={16} className="text-blue-500" />,
+                  color: 'text-gray-900',
+                  icon: <Star size={18} className="text-blue-500" />,
                 },
                 {
                   label: 'Consider',
                   value: summaryStats.consider,
-                  color: 'text-yellow-600',
-                  bg: 'bg-yellow-50',
-                  icon: <AlertTriangle size={16} className="text-yellow-500" />,
+                  color: 'text-gray-900',
+                  icon: <AlertTriangle size={18} className="text-amber-500" />,
                 },
                 {
                   label: 'Not Rec.',
                   value: summaryStats.not_recommended,
-                  color: 'text-red-600',
-                  bg: 'bg-red-50',
-                  icon: <XCircle size={16} className="text-red-400" />,
+                  color: 'text-gray-900',
+                  icon: <XCircle size={18} className="text-rose-400" />,
                 },
               ] as const
             ).map((stat) => (
               <div
                 key={stat.label}
-                className={clsx(
-                  'rounded-2xl p-4 flex flex-col items-start gap-1',
-                  stat.bg
-                )}
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-all hover:shadow-md hover:border-indigo-100 active:scale-[0.98]"
               >
-                {stat.icon}
-                <p className={clsx('text-2xl font-black leading-tight', stat.color)}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-xl bg-gray-50 group-hover:bg-indigo-50 transition-colors">
+                    {stat.icon}
+                  </div>
+                  <TrendingUp size={14} className="text-gray-200" />
+                </div>
+                <p className={clsx('text-2xl font-black tracking-tight', stat.color)}>
                   {stat.value}
-                  {stat.label === 'Avg Score' && <span className="text-sm font-medium">/100</span>}
                 </p>
-                <p className="text-xs text-gray-500 font-medium">{stat.label}</p>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-0.5">
+                  {stat.label}
+                </p>
               </div>
             ))}
           </div>
@@ -532,27 +586,44 @@ function ScreeningContent() {
             </div>
 
             {loading ? (
-              <div className="py-12 text-center">
-                <div className="inline-block w-7 h-7 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                <p className="mt-3 text-sm text-gray-500">Loading results...</p>
+              <div className="py-24 text-center">
+                <div className="inline-block w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin shadow-lg" />
+                <p className="mt-4 text-sm font-bold text-slate-800 tracking-tight">AI is ranking candidates...</p>
+                <p className="text-xs text-gray-400 mt-1">This takes about 10-15 seconds per 5 candidates</p>
               </div>
             ) : results.length === 0 ? (
-              <div className="py-16 bg-white rounded-2xl border border-gray-100 text-center">
-                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Brain size={24} className="text-indigo-400" />
+              <div className="py-24 bg-white rounded-3xl border border-gray-100 shadow-sm text-center">
+                <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Brain size={32} className="text-indigo-400" />
                 </div>
-                <p className="text-sm font-semibold text-gray-700">No screening results yet</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Make sure candidates are uploaded, then click Run AI
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Start Your First AI Screening</h3>
+                <p className="text-sm text-gray-400 mt-2 max-w-sm mx-auto">
+                  Automatically rank your candidates based on real job requirements using Gemini 1.5 Pro.
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {[...results]
-                  .sort((a, b) => a.rank - b.rank)
-                  .map((result) => (
-                    <ResultCard key={result._id} result={result} rank={result.rank} />
-                  ))}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ring-1 ring-gray-200/50">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50/80 border-b border-gray-100 text-gray-500 uppercase text-[10px] font-black tracking-[0.2em]">
+                        <th className="px-6 py-5">Rank</th>
+                        <th className="px-6 py-5">Candidate</th>
+                        <th className="px-6 py-5">AI Match</th>
+                        <th className="px-6 py-5">Recommendation</th>
+                        <th className="px-6 py-4 text-right">Options</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 italic-none">
+                      {results
+                        .slice()
+                        .sort((a, b) => a.rank - b.rank)
+                        .map((result) => (
+                          <ResultRow key={result._id} result={result} rank={result.rank} />
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

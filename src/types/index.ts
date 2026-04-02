@@ -108,7 +108,7 @@ export interface Applicant {
 
 export interface ScreeningResult {
   _id: string;
-  applicantId: string;
+  applicantId: string | Applicant;
   jobId: string;
   sessionId: string;
   rank: number;
