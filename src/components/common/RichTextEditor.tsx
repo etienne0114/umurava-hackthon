@@ -1,137 +1,271 @@
-import React, { useRef, useCallback } from 'react';
+'use client';
+
+import React from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
 import { 
   Bold, 
   Italic, 
-  Underline, 
+  Underline as UnderlineIcon, 
   List, 
-  ListOrdered,
-  Type
+  ListOrdered, 
+  Link as LinkIcon,
+  Heading1,
+  Heading2,
+  Undo,
+  Redo
 } from 'lucide-react';
 import clsx from 'clsx';
 
 interface RichTextEditorProps {
   label?: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (content: string) => void;
   placeholder?: string;
   error?: string;
   required?: boolean;
-  rows?: number;
 }
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({
-  label,
-  value,
-  onChange,
+const MenuButton = ({ 
+  onClick, 
+  isActive = false, 
+  disabled = false, 
+  children,
+  title
+}: { 
+  onClick: () => void; 
+  isActive?: boolean; 
+  disabled?: boolean; 
+  children: React.ReactNode;
+  title: string;
+}) => (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      onClick();
+    }}
+    disabled={disabled}
+    title={title}
+    className={clsx(
+      "p-2 rounded-lg transition-all border border-transparent",
+      isActive 
+        ? "bg-indigo-100 text-indigo-700 border-indigo-200" 
+        : "text-gray-500 hover:bg-gray-100 hover:text-gray-700",
+      disabled && "opacity-30 cursor-not-allowed"
+    )}
+  >
+    {children}
+  </button>
+);
+
+export const RichTextEditor: React.FC<RichTextEditorProps> = ({ 
+  label, 
+  value, 
+  onChange, 
   placeholder,
   error,
-  required,
-  rows = 8,
+  required 
 }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
+      Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-indigo-600 underline cursor-pointer',
+        },
+      }),
+      Placeholder.configure({
+        placeholder: placeholder || 'Write something...',
+      }),
+    ],
+    content: value,
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose max-w-none focus:outline-none min-h-[200px] p-4 text-gray-700',
+      },
+    },
+  });
 
-  const insertText = useCallback((before: string, after: string = '') => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  if (!editor) return null;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
-    
-    const newValue = 
-      value.substring(0, start) + 
-      before + (selectedText || '') + after + 
-      value.substring(end);
+  const setLink = () => {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
 
-    onChange(newValue);
-    
-    // Reset focus and selection
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + before.length,
-        start + before.length + (selectedText.length || 0)
-      );
-    }, 0);
-  }, [value, onChange]);
+    if (url === null) return;
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
 
-  const handleBulletList = useCallback(() => {
-    insertText('\n• ', '');
-  }, [insertText]);
-
-  const handleNumberedList = useCallback(() => {
-    insertText('\n1. ', '');
-  }, [insertText]);
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5 flex flex-col group">
       {label && (
-        <label className="block text-sm font-semibold text-gray-700">
-          {label} {required && <span className="text-red-500">*</span>}
+        <label className="text-sm font-bold text-gray-700 flex items-center gap-1 ml-1 mb-1">
+          {label}
+          {required && <span className="text-red-500">*</span>}
         </label>
       )}
-      
+
       <div className={clsx(
         "rounded-2xl border transition-all overflow-hidden bg-white",
-        error ? "border-red-300 ring-4 ring-red-50" : "border-gray-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-50"
+        error 
+          ? "border-red-300 ring-4 ring-red-50" 
+          : "border-gray-200 group-focus-within:border-indigo-400 group-focus-within:ring-4 group-focus-within:ring-indigo-50 shadow-sm"
       )}>
         {/* Toolbar */}
-        <div className="flex items-center gap-1 p-2 bg-gray-50 border-b border-gray-100">
-          <button
-            type="button"
-            onClick={() => insertText('**', '**')}
-            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+        <div className="px-3 py-2 border-b border-gray-100 bg-gray-50/50 flex flex-wrap gap-1 items-center">
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            isActive={editor.isActive('heading', { level: 1 })}
+            title="Heading 1"
+          >
+            <Heading1 size={18} />
+          </MenuButton>
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            isActive={editor.isActive('heading', { level: 2 })}
+            title="Heading 2"
+          >
+            <Heading2 size={18} />
+          </MenuButton>
+          
+          <div className="w-px h-6 bg-gray-200 mx-1" />
+
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            isActive={editor.isActive('bold')}
             title="Bold"
           >
-            <Bold className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => insertText('_', '_')}
-            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+            <Bold size={18} />
+          </MenuButton>
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            isActive={editor.isActive('italic')}
             title="Italic"
           >
-            <Italic className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => insertText('<u>', '</u>')}
-            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+            <Italic size={18} />
+          </MenuButton>
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            isActive={editor.isActive('underline')}
             title="Underline"
           >
-            <Underline className="w-4 h-4" />
-          </button>
-          <div className="w-px h-4 bg-gray-200 mx-1" />
-          <button
-            type="button"
-            onClick={handleBulletList}
-            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
-            title="Bullet List"
+            <UnderlineIcon size={18} />
+          </MenuButton>
+          
+          <div className="w-px h-6 bg-gray-200 mx-1" />
+          
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            isActive={editor.isActive('bulletList')}
+            title="Bulleted List"
           >
-            <List className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={handleNumberedList}
-            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
-            title="Numbered List"
+            <List size={18} />
+          </MenuButton>
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            isActive={editor.isActive('orderedList')}
+            title="Ordered List"
           >
-            <ListOrdered className="w-4 h-4" />
-          </button>
+            <ListOrdered size={18} />
+          </MenuButton>
+
+          <div className="w-px h-6 bg-gray-200 mx-1" />
+
+          <MenuButton
+            onClick={setLink}
+            isActive={editor.isActive('link')}
+            title="Add Link"
+          >
+            <LinkIcon size={18} />
+          </MenuButton>
+
+          <div className="flex-1" />
+
+          <MenuButton
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().undo()}
+            title="Undo"
+          >
+            <Undo size={18} />
+          </MenuButton>
+          <MenuButton
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().redo()}
+            title="Redo"
+          >
+            <Redo size={18} />
+          </MenuButton>
         </div>
 
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={rows}
-          className="w-full p-4 text-sm text-gray-800 placeholder:text-gray-400 border-none outline-none focus:ring-0 resize-none leading-relaxed"
-        />
+        {/* Editor Area */}
+        <div className="relative">
+          <EditorContent editor={editor} />
+        </div>
       </div>
 
-      {error && <p className="text-xs font-medium text-red-500 mt-1">{error}</p>}
+      {error && (
+        <p className="mt-1 text-xs font-semibold text-red-500 animate-in slide-in-from-top-1 ml-1">
+          {error}
+        </p>
+      )}
+
+      {/* Tailwind Typography styles injected for the editor area */}
+      <style jsx global>{`
+        .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: #adb5bd;
+          pointer-events: none;
+          height: 0;
+        }
+        .ProseMirror {
+          min-height: 200px;
+        }
+        .ProseMirror ul {
+          list-style-type: disc;
+          padding-left: 1.5rem;
+          margin: 1rem 0;
+        }
+        .ProseMirror ol {
+          list-style-type: decimal;
+          padding-left: 1.5rem;
+          margin: 1rem 0;
+        }
+        .ProseMirror h1 {
+          font-size: 1.5rem;
+          font-weight: 800;
+          margin-bottom: 1rem;
+        }
+        .ProseMirror h2 {
+          font-size: 1.25rem;
+          font-weight: 700;
+          margin-bottom: 0.75rem;
+        }
+      `}</style>
     </div>
   );
 };
