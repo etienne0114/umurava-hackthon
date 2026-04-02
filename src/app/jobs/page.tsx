@@ -12,6 +12,8 @@ import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { JobStatus } from '@/types';
 import toast from 'react-hot-toast';
 
+import { Search, Plus, Filter } from 'lucide-react';
+
 const JobList = lazy(() =>
   import('@/components/jobs/JobList').then(mod => ({ default: mod.JobList }))
 );
@@ -52,26 +54,30 @@ function JobsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-6 mb-12">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-none">
             {isCompany ? 'My Job Postings' : 'Available Jobs'}
           </h1>
           {!isCompany && (
-            <p className="text-sm text-gray-500 mt-1">Browse and apply to open positions</p>
+            <p className="text-sm font-bold text-gray-400 mt-2">Explore elite opportunities in the Umurava network</p>
           )}
         </div>
         {isCompany && (
-          <Button onClick={() => router.push('/jobs/new')} className="w-full sm:w-auto">
-            + Create New Job
-          </Button>
+          <button 
+            onClick={() => router.push('/jobs/new')}
+            className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 group"
+          >
+            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+            Post New Opportunity
+          </button>
         )}
       </div>
 
       <Suspense
         fallback={
-          <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-            <CardSkeleton /><CardSkeleton /><CardSkeleton /><CardSkeleton />
+          <div className="grid gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            <CardSkeleton /><CardSkeleton /><CardSkeleton />
           </div>
         }
       >
