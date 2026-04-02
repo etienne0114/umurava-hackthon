@@ -176,22 +176,19 @@ function JobDetailContent() {
           </span>
         </div>
 
-        <p className="text-sm text-gray-600 leading-relaxed mb-5">{currentJob.description}</p>
+        <div 
+          className="prose prose-sm max-w-none text-gray-600 mb-6"
+          dangerouslySetInnerHTML={{ __html: currentJob.description }}
+        />
 
         {/* Skills */}
-        {currentJob.requirements?.skills?.length > 0 && (
-          <div className="mb-5">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Required Skills</h3>
-            <div className="flex flex-wrap gap-2">
-              {currentJob.requirements.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
+        {currentJob.requirements?.skills && (
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Required Skills</h3>
+            <div 
+              className="prose prose-sm max-w-none text-gray-600 bg-gray-50/50 p-4 rounded-xl border border-gray-100"
+              dangerouslySetInnerHTML={{ __html: currentJob.requirements.skills }}
+            />
           </div>
         )}
 
