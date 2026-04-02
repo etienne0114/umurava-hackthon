@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchJobs } from '@/store/slices/jobSlice';
 import { fetchApplicants, uploadApplicants, deleteApplicant } from '@/store/slices/applicantSlice';
 import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Job, Applicant } from '@/types';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Upload,
   Users,
@@ -18,6 +19,7 @@ import {
   AlertCircle,
   X,
   Eye,
+  ChevronLeft,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -140,9 +142,12 @@ function ApplicantCard({
 
 function CandidatesContent() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedJobId = searchParams.get('jobId') || '';
   const { jobs } = useAppSelector((state) => state.jobs);
   const { applicants, loading, uploadProgress } = useAppSelector((state) => state.applicants);
-  const [selectedJobId, setSelectedJobId] = useState<string>('');
+  const [selectedJobId, setSelectedJobId] = useState<string>(preselectedJobId);
   const [search, setSearch] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -151,6 +156,13 @@ function CandidatesContent() {
   useEffect(() => {
     dispatch(fetchJobs());
   }, [dispatch]);
+
+  // Auto-select job from URL param once jobs are loaded
+  useEffect(() => {
+    if (preselectedJobId && jobs.length > 0) {
+      setSelectedJobId(preselectedJobId);
+    }
+  }, [preselectedJobId, jobs]);
 
   useEffect(() => {
     if (selectedJobId) {
@@ -163,14 +175,15 @@ function CandidatesContent() {
       toast.error('Please select a job first');
       return;
     }
-    if (!file.name.endsWith('.csv') && !file.name.endsWith('.json')) {
-      toast.error('Please upload a CSV or JSON file');
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['csv', 'xlsx', 'xls', 'pdf'].includes(ext || '')) {
+      toast.error('Please upload a CSV, Excel (.xlsx/.xls), or PDF file');
       return;
     }
     setUploading(true);
     try {
       const result = await dispatch(uploadApplicants({ jobId: selectedJobId, file })).unwrap();
-      toast.success(`${result.length} candidates uploaded successfully`);
+      toast.success(`${Array.isArray(result) ? result.length : 0} candidates uploaded successfully`);
     } catch (err: any) {
       toast.error(err.message || 'Upload failed');
     } finally {
@@ -210,11 +223,22 @@ function CandidatesContent() {
     <CompanyLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Candidates</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Upload and manage candidates for your job postings
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            {preselectedJobId && (
+              <button
+                onClick={() => router.push(`/jobs/${preselectedJobId}`)}
+                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors mb-3"
+              >
+                <ChevronLeft size={16} />
+                Back to Job
+              </button>
+            )}
+            <h1 className="text-2xl font-bold text-gray-900">Candidates</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Upload and manage candidates for your job postings
+            </p>
+          </div>
         </div>
 
         {/* Job Selector */}
@@ -267,7 +291,7 @@ function CandidatesContent() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.json"
+            accept=".csv,.xlsx,.xls,.pdf"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -298,11 +322,11 @@ function CandidatesContent() {
                 Drag & drop your file here, or{' '}
                 <span className="text-indigo-600">click to browse</span>
               </p>
-              <p className="text-xs text-gray-400 mt-1">Supports CSV and JSON files</p>
+              <p className="text-xs text-gray-400 mt-1">Supports CSV, Excel (.xlsx/.xls), and PDF</p>
               <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-400">
                 <span className="flex items-center gap-1">
                   <FileText size={12} />
-                  CSV format
+                  CSV / Excel / PDF
                 </span>
                 <span className="flex items-center gap-1">
                   <CheckCircle size={12} className="text-green-500" />
@@ -390,7 +414,9 @@ function CandidatesContent() {
 export default function CompanyCandidatesPage() {
   return (
     <ProtectedRoute requiredRole="company">
-      <CandidatesContent />
+      <Suspense fallback={null}>
+        <CandidatesContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchJobById } from '@/store/slices/jobSlice';
-import { fetchApplicants } from '@/store/slices/applicantSlice';
 import { startScreening } from '@/store/slices/screeningSlice';
 import { TalentLayout } from '@/components/layout/TalentLayout';
 import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Loader } from '@/components/common/Loader';
-import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import apiClient from '@/store/api/apiClient';
 import toast from 'react-hot-toast';
+import { Applicant } from '@/types';
 import {
   MapPin,
   Clock,
@@ -24,6 +23,7 @@ import {
   Upload,
   BarChart2,
   CheckCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 function Tag({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
@@ -42,39 +42,60 @@ function JobDetailContent() {
   const dispatch = useAppDispatch();
 
   const { currentJob, loading: jobLoading } = useAppSelector((state) => state.jobs);
-  const { applicants, loading: applicantsLoading } = useAppSelector((state) => state.applicants);
   const { session, loading: screeningLoading } = useAppSelector((state) => state.screening);
   const { user } = useAppSelector((state) => state.auth);
   const isCompany = user?.role === 'company';
+
+  // Local state for applicants — bypasses Redux to avoid stale-state issues
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
+  const [applicantsError, setApplicantsError] = useState<string | null>(null);
+
   const [hasApplied, setHasApplied] = React.useState(false);
   const [checkingApplication, setCheckingApplication] = React.useState(false);
 
-  useEffect(() => {
-    if (jobId) {
-      dispatch(fetchJobById(jobId));
-      if (isCompany) {
-        dispatch(fetchApplicants({ jobId }));
-      } else if (user?.role === 'talent') {
-        // Check if talent already applied
-        const checkApplicationStatus = async () => {
-          setCheckingApplication(true);
-          try {
-            const res = await apiClient.get('/talent/applications');
-            const applications = res.data.data;
-            const alreadyApplied = applications.some((app: any) => 
-              (typeof app.jobId === 'string' ? app.jobId : app.jobId?._id) === jobId
-            );
-            setHasApplied(alreadyApplied);
-          } catch (err) {
-            console.error('Error checking application status:', err);
-          } finally {
-            setCheckingApplication(false);
-          }
-        };
-        checkApplicationStatus();
-      }
+  const loadApplicants = useCallback(async () => {
+    if (!jobId || !isCompany) return;
+    setApplicantsLoading(true);
+    setApplicantsError(null);
+    try {
+      const res = await apiClient.get(`/applicants?jobId=${jobId}`);
+      const data = res.data?.data;
+      setApplicants(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setApplicantsError(err?.message || 'Failed to load applicants');
+      setApplicants([]);
+    } finally {
+      setApplicantsLoading(false);
     }
-  }, [dispatch, jobId, isCompany, user]);
+  }, [jobId, isCompany]);
+
+  useEffect(() => {
+    if (!user || !jobId) return;
+
+    dispatch(fetchJobById(jobId));
+
+    if (isCompany) {
+      loadApplicants();
+    } else if (user.role === 'talent') {
+      const checkApplicationStatus = async () => {
+        setCheckingApplication(true);
+        try {
+          const res = await apiClient.get('/talent/applications');
+          const applications = res.data.data;
+          const alreadyApplied = applications.some((app: any) =>
+            (typeof app.jobId === 'string' ? app.jobId : app.jobId?._id) === jobId
+          );
+          setHasApplied(alreadyApplied);
+        } catch {
+          // ignore
+        } finally {
+          setCheckingApplication(false);
+        }
+      };
+      checkApplicationStatus();
+    }
+  }, [dispatch, jobId, isCompany, user, loadApplicants]);
 
   const handleApply = async () => {
     try {
@@ -191,7 +212,7 @@ function JobDetailContent() {
           {isCompany ? (
             <>
               <button
-                onClick={() => router.push(`/company/candidates`)}
+                onClick={() => router.push(`/company/candidates?jobId=${jobId}`)}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
               >
                 <Upload size={15} />
@@ -199,7 +220,7 @@ function JobDetailContent() {
               </button>
               <button
                 onClick={handleStartScreening}
-                disabled={currentJob.applicantCount === 0 || screeningLoading}
+                disabled={applicants.length === 0 || screeningLoading}
                 className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Zap size={15} />
@@ -228,12 +249,12 @@ function JobDetailContent() {
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <CheckCircle size={15} />
-              {hasApplied 
-                ? 'Already Applied' 
-                : checkingApplication 
-                  ? 'Checking status...' 
-                  : currentJob.status === 'active' 
-                    ? 'Apply Now' 
+              {hasApplied
+                ? 'Already Applied'
+                : checkingApplication
+                  ? 'Checking status...'
+                  : currentJob.status === 'active'
+                    ? 'Apply Now'
                     : 'Applications Closed'}
             </button>
           )}
@@ -243,34 +264,52 @@ function JobDetailContent() {
       {/* Applicants list (company only) */}
       {isCompany && (
         <Card>
-          <h2 className="text-base font-bold text-gray-900 mb-4">
-            Applicants
-            <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">
-              {currentJob.applicantCount ?? 0}
-            </span>
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-gray-900">
+              Applicants
+              <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">
+                {applicants.length}
+              </span>
+            </h2>
+            {!applicantsLoading && (
+              <button
+                onClick={loadApplicants}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-indigo-600 transition-colors"
+                title="Refresh applicants"
+              >
+                <RefreshCw size={13} />
+                Refresh
+              </button>
+            )}
+          </div>
 
           {applicantsLoading ? (
             <div className="py-8 flex justify-center">
               <Loader text="Loading applicants..." />
             </div>
+          ) : applicantsError ? (
+            <div className="text-center py-10">
+              <p className="text-sm text-red-500 font-medium mb-2">{applicantsError}</p>
+              <button
+                onClick={loadApplicants}
+                className="text-indigo-600 text-sm font-semibold hover:underline"
+              >
+                Retry
+              </button>
+            </div>
           ) : applicants.length === 0 ? (
             <div className="text-center py-10 text-gray-400">
               <Briefcase size={32} className="mx-auto mb-3 text-gray-200" />
               <p className="text-sm font-medium">No applicants yet</p>
-              <button
-                onClick={() => router.push('/company/candidates')}
-                className="mt-3 text-indigo-600 text-sm font-semibold hover:underline"
-              >
-                Upload candidates →
-              </button>
+              <p className="text-xs text-gray-300 mt-1">Use the Upload Candidates button above to add candidates</p>
             </div>
           ) : (
             <div className="space-y-3">
               {applicants.map((a) => (
                 <div
                   key={a._id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/company/candidates?jobId=${jobId}`)}
                 >
                   <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-sm flex-shrink-0">
                     {a.profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
