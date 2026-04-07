@@ -4,7 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
+  timeout: 90000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,8 +38,11 @@ apiClient.interceptors.response.use(
         statusCode: error.response.status,
       });
     } else if (error.request) {
+      const isTimeout = error.code === 'ECONNABORTED';
       return Promise.reject({
-        message: 'No response from server',
+        message: isTimeout
+          ? 'Request timed out — the AI is taking longer than expected. Please try again.'
+          : 'No response from server. Please check your connection.',
         code: 'NETWORK_ERROR',
       });
     } else {
