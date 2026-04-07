@@ -139,7 +139,10 @@ const ShortlistTableComponent: React.FC<ShortlistTableProps> = ({
                   </td>
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <button
-                      onClick={() => onSelectCandidate(result.applicantId)}
+                      onClick={() => {
+                        const id = typeof result.applicantId === 'string' ? result.applicantId : result.applicantId._id;
+                        onSelectCandidate(id);
+                      }}
                       className="text-blue-700 hover:text-blue-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1"
                       aria-label={`View details for ${applicant?.profile?.name || 'candidate'}`}
                     >
@@ -210,7 +213,10 @@ const ShortlistTableComponent: React.FC<ShortlistTableProps> = ({
               </div>
 
               <button
-                onClick={() => onSelectCandidate(result.applicantId)}
+                onClick={() => {
+                  const id = typeof result.applicantId === 'string' ? result.applicantId : result.applicantId._id;
+                  onSelectCandidate(id);
+                }}
                 className="w-full text-blue-700 hover:text-blue-900 text-sm font-medium py-2 border-t focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
                 aria-label={`View details for ${applicant?.profile?.name || 'candidate'}`}
               >

@@ -71,7 +71,10 @@ export default function ScreeningResultsPage() {
     }
   };
 
-  const selectedResult = results.find((r) => r.applicantId === selectedApplicantId);
+  const selectedResult = results.find((r) => {
+    const id = typeof r.applicantId === 'string' ? r.applicantId : r.applicantId._id;
+    return id === selectedApplicantId;
+  });
 
   if (loading && results.length === 0) {
     return (
@@ -214,16 +217,22 @@ export default function ScreeningResultsPage() {
               </>
             }>
               {results.map((result) => {
-                const applicant = (result as any).applicantId;
+                const applicant = typeof result.applicantId === 'string' 
+                  ? null // Should not happen if populated, but fallback
+                  : result.applicantId;
+                const applicantId = typeof result.applicantId === 'string' 
+                  ? result.applicantId 
+                  : result.applicantId._id;
+
                 return (
                   <CandidateCard
                     key={result._id}
-                    applicant={applicant}
+                    applicant={applicant as any}
                     result={result}
-                    expanded={selectedApplicantId === result.applicantId}
+                    expanded={selectedApplicantId === applicantId}
                     onToggle={() =>
                       setSelectedApplicantId(
-                        selectedApplicantId === result.applicantId ? null : result.applicantId
+                        selectedApplicantId === applicantId ? null : applicantId
                       )
                     }
                   />

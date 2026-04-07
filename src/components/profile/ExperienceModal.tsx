@@ -199,7 +199,6 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
           onChange={(val) => setFormData({ ...formData, description: val })}
           placeholder="Describe your role and responsibilities..."
           required
-          rows={6}
         />
 
         <div className="flex justify-end gap-3 pt-2">
