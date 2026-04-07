@@ -310,7 +310,8 @@ function ResultRow({
 
   const handleGenerateTest = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!applicant || !jobId) return;
+    if (!applicant) { toast.error('Candidate data not loaded'); return; }
+    if (!jobId) { toast.error('Job not selected'); return; }
 
     try {
       setGeneratingTest(true);
@@ -318,12 +319,12 @@ function ResultRow({
         applicantId: applicant._id,
         jobId: jobId
       });
-      
+
       setAssessment(res.data.data);
       setShowAssessment(true);
       toast.success('AI technical assessment generated!');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to generate AI test');
+      toast.error(error.message || 'Failed to generate AI test');
     } finally {
       setGeneratingTest(false);
     }
@@ -609,7 +610,6 @@ function ScreeningContent() {
   const [starting, setStarting] = useState(false);
   const [polling, setPolling] = useState(false);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
-  const [bulkSending, setBulkSending] = useState(false);
 
   useEffect(() => {
     dispatch(fetchJobs());
@@ -683,9 +683,8 @@ function ScreeningContent() {
     if (!selectedJobId || results.length === 0) return;
 
     try {
-      setBulkSending(true);
       const applicantIds = results.map(r => typeof r.applicantId === 'object' ? r.applicantId._id : r.applicantId);
-      
+
       const res = await apiClient.post('/assessments/bulk-generate', {
         jobId: selectedJobId,
         applicantIds
@@ -695,9 +694,7 @@ function ScreeningContent() {
       setShowBulkConfirm(false);
       dispatch(fetchScreeningResults({ jobId: selectedJobId }));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to send bulk assessments');
-    } finally {
-      setBulkSending(false);
+      toast.error(error.message || 'Failed to send bulk assessments');
     }
   };
 
