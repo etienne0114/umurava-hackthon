@@ -110,14 +110,19 @@ export interface Applicant {
 
 export interface Assessment {
   _id: string;
-  jobId: string;
-  applicantId: string;
+  jobId: string | Job;
+  applicantId: string | Applicant;
   questions: Array<{
     question: string;
     expectedAnswer: string;
   }>;
+  candidateAnswers?: Array<{
+    question: string;
+    answer: string;
+  }>;
   status: 'pending' | 'completed' | 'expired';
   expiresAt?: string;
+  submittedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -10,6 +10,7 @@ import {
   User,
   Briefcase,
   ClipboardList,
+  ClipboardCheck,
   LogOut,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -28,6 +29,7 @@ const navGroups = [
     items: [
       { name: 'Browse Jobs',     icon: Briefcase,     href: '/jobs' },
       { name: 'My Applications', icon: ClipboardList, href: '/talent/applications' },
+      { name: 'Quick Tests',     icon: ClipboardCheck, href: '/talent/tests' },
     ],
   },
 ];
