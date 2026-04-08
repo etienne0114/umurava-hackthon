@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchJobs } from '@/store/slices/jobSlice';
 import {
@@ -25,6 +25,7 @@ import {
   Clock,
   XCircle,
   Zap,
+  ClipboardCheck,
   BarChart3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -263,12 +264,14 @@ function ResultRow({
   jobId,
   jobTitle,
   onStatusUpdate,
+  focusApplicantId,
 }: {
   result: ScreeningResult;
   rank: number;
   jobId?: string;
   jobTitle?: string;
   onStatusUpdate?: () => void;
+  focusApplicantId?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [hiring, setHiring] = useState(false);
@@ -276,9 +279,54 @@ function ResultRow({
   const [showAssessment, setShowAssessment] = useState(false);
   const [showHireConfirm, setShowHireConfirm] = useState(false);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [submittedAssessment, setSubmittedAssessment] = useState<Assessment | null>(null);
+  const [submittedLoading, setSubmittedLoading] = useState(false);
+  const [submittedError, setSubmittedError] = useState<string | null>(null);
+  const [autoExpanded, setAutoExpanded] = useState(false);
+  const rowRef = useRef<HTMLTableRowElement>(null);
 
   const cfg = RECOMMENDATION_CONFIG[result.evaluation.recommendation];
   const applicant = typeof result.applicantId === 'object' ? result.applicantId : null;
+  const applicantId = applicant?._id;
+
+  useEffect(() => {
+    if (!focusApplicantId || !applicantId || autoExpanded) return;
+    if (focusApplicantId === applicantId) {
+      setExpanded(true);
+      setAutoExpanded(true);
+      setTimeout(() => {
+        rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
+  }, [focusApplicantId, applicantId, autoExpanded]);
+
+  useEffect(() => {
+    if (!expanded || !applicant?._id) return;
+    let active = true;
+
+    const fetchSubmittedAssessment = async () => {
+      try {
+        setSubmittedLoading(true);
+        setSubmittedError(null);
+        const res = await apiClient.get(`/assessments/applicant/${applicant._id}`);
+        if (active) {
+          setSubmittedAssessment(res.data.data || null);
+        }
+      } catch (err: any) {
+        if (active) {
+          setSubmittedAssessment(null);
+          setSubmittedError(err?.message || 'No assessment found');
+        }
+      } finally {
+        if (active) setSubmittedLoading(false);
+      }
+    };
+
+    fetchSubmittedAssessment();
+    return () => {
+      active = false;
+    };
+  }, [expanded, applicant?._id]);
 
   const handleContact = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -332,10 +380,13 @@ function ResultRow({
 
   return (
     <>
-      <tr 
+      <tr
+        ref={rowRef}
+        id={applicantId ? `applicant-${applicantId}` : undefined}
         className={clsx(
           "group cursor-pointer transition-all hover:bg-gray-50",
-          expanded ? "bg-gray-50/80" : "bg-white"
+          expanded ? "bg-gray-50/80" : "bg-white",
+          focusApplicantId && applicantId === focusApplicantId ? "ring-2 ring-indigo-200" : ""
         )}
         onClick={() => setExpanded(!expanded)}
       >
@@ -501,6 +552,67 @@ function ResultRow({
                   <ScoreBar label="Education Background" value={result.scoreBreakdown.education} />
                   <ScoreBar label="Market Relevance" value={result.scoreBreakdown.relevance} />
                 </div>
+
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <ClipboardCheck size={13} className="text-indigo-500" />
+                      Quick Test Review
+                    </h4>
+                    {submittedAssessment?.grading?.totalScore != null && (
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest">
+                        {submittedAssessment.grading.totalScore}/100
+                      </span>
+                    )}
+                  </div>
+
+                  {submittedLoading ? (
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      Loading quick test responses...
+                    </div>
+                  ) : submittedAssessment?.status === 'completed' ? (
+                    <div className="space-y-4">
+                      {submittedAssessment.grading?.overallFeedback && (
+                        <p className="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                          {submittedAssessment.grading.overallFeedback}
+                        </p>
+                      )}
+                      <div className="space-y-3">
+                        {submittedAssessment.questions.map((q, idx) => {
+                          const answer = submittedAssessment.candidateAnswers?.find((a) => a.question === q.question);
+                          const grading = submittedAssessment.grading?.perQuestion?.find((p) => p.question === q.question);
+                          return (
+                            <div key={idx} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
+                              <p className="text-[11px] font-bold text-gray-800 mb-1">
+                                Q{idx + 1}: {q.question}
+                              </p>
+                              <p className="text-[11px] text-gray-600 whitespace-pre-wrap">
+                                {answer?.answer || 'No answer submitted'}
+                              </p>
+                              {grading && (
+                                <div className="mt-2 flex items-start justify-between gap-3 text-[10px] text-gray-500">
+                                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wider">
+                                    {grading.score}/10
+                                  </span>
+                                  <span className="flex-1 text-right">{grading.feedback}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : submittedAssessment ? (
+                    <p className="text-xs text-gray-500">
+                      Test assigned but not submitted yet.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400">
+                      {submittedError || 'No quick test submitted yet.'}
+                    </p>
+                  )}
+                </div>
                 
                 <div className="pt-2 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -603,6 +715,7 @@ function ScreeningContent() {
   const { results, session, loading } = useAppSelector((state) => state.screening);
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const initialJobId = searchParams?.get('jobId') || '';
+  const initialApplicantId = searchParams?.get('applicantId') || '';
 
   const [selectedJobId, setSelectedJobId] = useState(initialJobId);
   const [topN, setTopN] = useState(10);
@@ -610,6 +723,8 @@ function ScreeningContent() {
   const [starting, setStarting] = useState(false);
   const [polling, setPolling] = useState(false);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [autoFocusApplicantId, setAutoFocusApplicantId] = useState('');
+  const [autoFocusJobId, setAutoFocusJobId] = useState('');
 
   useEffect(() => {
     dispatch(fetchJobs());
@@ -647,6 +762,33 @@ function ScreeningContent() {
       dispatch(fetchScreeningResults({ jobId: selectedJobId }));
     }
   }, [dispatch, selectedJobId]);
+
+  useEffect(() => {
+    if (!selectedJobId || initialApplicantId) return;
+    if (autoFocusJobId === selectedJobId) return;
+
+    const fetchLatestSubmitted = async () => {
+      try {
+        const res = await apiClient.get(`/assessments/job/${selectedJobId}/latest-submitted`);
+        const assessment = res.data?.data;
+        const applicant = assessment?.applicantId;
+        const applicantId =
+          typeof applicant === 'object' ? applicant?._id : undefined;
+        if (applicantId) {
+          setAutoFocusApplicantId(applicantId);
+          setAutoFocusJobId(selectedJobId);
+        } else {
+          setAutoFocusApplicantId('');
+          setAutoFocusJobId(selectedJobId);
+        }
+      } catch {
+        setAutoFocusApplicantId('');
+        setAutoFocusJobId(selectedJobId);
+      }
+    };
+
+    fetchLatestSubmitted();
+  }, [selectedJobId, initialApplicantId, autoFocusJobId]);
 
   const handleStartScreening = async () => {
     if (!selectedJobId) {
@@ -1002,6 +1144,7 @@ function ScreeningContent() {
                             rank={result.rank} 
                             jobId={selectedJob?._id}
                             jobTitle={selectedJob?.title}
+                            focusApplicantId={initialApplicantId || autoFocusApplicantId}
                             onStatusUpdate={() => {
                               if (selectedJobId) {
                                 dispatch(fetchScreeningResults({ jobId: selectedJobId }));

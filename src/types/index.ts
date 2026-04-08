@@ -120,6 +120,18 @@ export interface Assessment {
     question: string;
     answer: string;
   }>;
+  grading?: {
+    totalScore?: number;
+    perQuestion?: Array<{
+      question: string;
+      score: number;
+      feedback: string;
+    }>;
+    overallFeedback?: string;
+    provider?: string;
+    model?: string;
+    gradedAt?: string;
+  };
   status: 'pending' | 'completed' | 'expired';
   expiresAt?: string;
   submittedAt?: string;
