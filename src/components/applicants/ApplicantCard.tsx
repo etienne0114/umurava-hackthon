@@ -34,12 +34,12 @@ const ApplicantCardComponent: React.FC<ApplicantCardProps> = ({ applicant, onRem
         <div className="mb-3">
           <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Skills:</p>
           <div className="flex flex-wrap gap-1">
-            {applicant.profile.skills.slice(0, 5).map((skill, index) => (
+            {applicant.profile.skills.slice(0, 5).map((skill) => (
               <span
-                key={index}
+                key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
                 className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
               >
-                {skill}
+                {skill.name}
               </span>
             ))}
             {applicant.profile.skills.length > 5 && (

@@ -4,7 +4,7 @@ import React from 'react';
 import { JobCard } from './JobCard';
 import { Loader } from '../common/Loader';
 import { Job, JobStatus } from '@/types';
-import { Search, Filter, Plus, Inbox } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import clsx from 'clsx';
 
 interface JobListProps {

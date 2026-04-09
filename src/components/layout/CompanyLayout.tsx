@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { CompanySidebar } from './CompanySidebar';
-import { Bell, Search } from 'lucide-react';
 import { useAppSelector } from '@/store';
 import Link from 'next/link';
 import { NotificationDropdown } from './NotificationDropdown';

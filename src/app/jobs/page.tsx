@@ -4,7 +4,6 @@ import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchJobs, deleteJob } from '@/store/slices/jobSlice';
-import { Button } from '@/components/common/Button';
 import { CardSkeleton } from '@/components/common/Skeleton';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { TalentLayout } from '@/components/layout/TalentLayout';
@@ -12,7 +11,7 @@ import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { JobStatus } from '@/types';
 import toast from 'react-hot-toast';
 
-import { Search, Plus, Filter } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 const JobList = lazy(() =>
   import('@/components/jobs/JobList').then(mod => ({ default: mod.JobList }))

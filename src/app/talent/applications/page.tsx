@@ -12,7 +12,7 @@ import { Application, Job } from '@/types';
 import { Briefcase, Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type PopulatedApplication = Omit<Application, 'jobId'> & { jobId: Job };
+type PopulatedApplication = Omit<Application, 'jobId'> & { jobId: Job | null };
 
 const STATUS_CONFIG = {
   pending: {
@@ -150,16 +150,17 @@ export default function TalentApplicationsPage() {
                     onClick={() => router.push('/jobs')}
                     className="mt-4 text-blue-600 text-sm font-semibold hover:underline"
                   >
-                    Browse Jobs ->
+                    Browse Jobs &rarr;
                   </button>
                 </div>
               </Card>
             ) : (
               <div className="space-y-4">
                 {filtered.map((app) => {
-                  const job = app.jobId as Job;
+                  const job = app.jobId;
                   const cfg = STATUS_CONFIG[app.status];
-                  const Icon = cfg.icon;
+
+                  if (!job) return null;
 
                   return (
                     <div

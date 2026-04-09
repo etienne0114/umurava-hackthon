@@ -2,12 +2,17 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { 
-  updateProfile, 
-  ParsedResumeProfile, 
-  ExperienceEntry, 
-  EducationEntry 
+import {
+  updateProfile,
+  ParsedResumeProfile,
+  ExperienceEntry,
 } from '@/store/slices/authSlice';
+import {
+  SkillEntry,
+  LanguageEntry,
+  CertificationEntry,
+  ProjectEntry,
+} from '@/types';
 import { TalentLayout } from '@/components/layout/TalentLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { 
@@ -15,11 +20,8 @@ import {
   CheckCircle2, 
   Loader2, 
   X,
-  Plus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import clsx from 'clsx';
-
 // Shared Components
 import { CVUploadTrigger } from '@/components/profile/CVUploadTrigger';
 import { ProfileOverviewCard } from '@/components/profile/ProfileOverviewCard';
@@ -72,10 +74,17 @@ function ProfilePageContent() {
     name: user?.profile?.name || '',
     phone: user?.profile?.phone || '',
     position: user?.profile?.position || '',
+    headline: user?.profile?.headline || '',
+    location: user?.profile?.location || '',
     bio: user?.profile?.bio || '',
-    skills: user?.profile?.skills || [],
+    skills: user?.profile?.skills || ([] as SkillEntry[]),
+    languages: user?.profile?.languages || ([] as LanguageEntry[]),
     experience: user?.profile?.experience || [],
     education: user?.profile?.education || [],
+    certifications: user?.profile?.certifications || ([] as CertificationEntry[]),
+    projects: user?.profile?.projects || ([] as ProjectEntry[]),
+    availability: user?.profile?.availability || undefined,
+    socialLinks: user?.profile?.socialLinks || undefined,
   });
 
   // Keep local state in sync with Redux if user changes
@@ -85,15 +94,22 @@ function ProfilePageContent() {
         name: user.profile.name || '',
         phone: user.profile.phone || '',
         position: user.profile.position || '',
+        headline: user.profile.headline || '',
+        location: user.profile.location || '',
         bio: user.profile.bio || '',
-        skills: user.profile.skills || [],
+        skills: user.profile.skills || ([] as SkillEntry[]),
+        languages: user.profile.languages || ([] as LanguageEntry[]),
         experience: user.profile.experience || [],
         education: user.profile.education || [],
+        certifications: user.profile.certifications || ([] as CertificationEntry[]),
+        projects: user.profile.projects || ([] as ProjectEntry[]),
+        availability: user.profile.availability || undefined,
+        socialLinks: user.profile.socialLinks || undefined,
       });
     }
   }, [user]);
 
-  const handleCVParsed = useCallback((extracted: ParsedResumeProfile) => {
+  const handleCVParsed = useCallback((_extracted: ParsedResumeProfile) => {
     // Redux updates automatically, but we ensure local state is refreshed if manual merging is needed
     toast.success('CV Processed: Local state synced with AI extraction');
   }, []);
@@ -135,12 +151,23 @@ function ProfilePageContent() {
   };
 
   const handleAddSkill = (skill: string) => {
-    if (!skill.trim() || form.skills.includes(skill)) return;
-    saveToBackend({ skills: [...form.skills, skill] });
+    const trimmed = skill.trim();
+    if (!trimmed) return;
+    if (form.skills.some((entry) => entry.name.toLowerCase() === trimmed.toLowerCase())) return;
+
+    const updated = [
+      { name: trimmed, level: 'Intermediate' as const },
+      ...form.skills,
+    ];
+    saveToBackend({ skills: updated });
   };
 
-  const handleRemoveSkill = (skill: string) => {
-    saveToBackend({ skills: form.skills.filter(s => s !== skill) });
+  const handleRemoveSkill = (skill: SkillEntry) => {
+    saveToBackend({
+      skills: form.skills.filter(
+        (entry) => entry.name !== skill.name || entry.level !== skill.level
+      ),
+    });
   };
 
   return (
@@ -259,10 +286,19 @@ function ProfilePageContent() {
              </div>
              <p className="text-[10px] text-gray-400 font-medium">Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border">Enter</kbd> to add multiple skills</p>
              <div className="flex flex-wrap gap-2 pt-2">
-               {form.skills.map(skill => (
-                 <span key={skill} className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 flex items-center gap-2">
-                   {skill}
-                   <button onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500"><X size={12} /></button>
+               {form.skills.map((skill) => (
+                 <span
+                   key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
+                   className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 flex items-center gap-2"
+                 >
+                   <span>{skill.name}</span>
+                   <span className="text-[9px] text-gray-400 uppercase tracking-wider">
+                     {skill.level}
+                     {skill.yearsOfExperience ? ` · ${skill.yearsOfExperience} yrs` : ''}
+                   </span>
+                   <button onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500">
+                     <X size={12} />
+                   </button>
                  </span>
                ))}
              </div>
@@ -298,8 +334,24 @@ function ProfilePageContent() {
                value={form.phone}
                onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
+            <Input 
+               label="Headline"
+               value={form.headline}
+               onChange={(e) => setForm({ ...form, headline: e.target.value })}
+            />
+            <Input 
+               label="Location"
+               value={form.location}
+               onChange={(e) => setForm({ ...form, location: e.target.value })}
+            />
             <button
-              onClick={() => saveToBackend({ name: form.name, position: form.position, phone: form.phone })}
+              onClick={() => saveToBackend({
+                name: form.name,
+                position: form.position,
+                phone: form.phone,
+                headline: form.headline,
+                location: form.location,
+              })}
               disabled={saving}
               className="w-full mt-4 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
             >

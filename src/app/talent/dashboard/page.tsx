@@ -83,7 +83,7 @@ export default function TalentDashboard() {
   const { user } = useAppSelector((state) => state.auth);
   const [stats, setStats] = useState<DashboardStats>({ submissions: 0, pending: 0, hired: 0, declined: 0 });
   const [engagement, setEngagement] = useState<EngagementData>({ totalViews: 0, chartData: [] });
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<Job[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchingJobs, setFetchingJobs] = useState(false);
@@ -131,7 +131,7 @@ export default function TalentDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, []); // Run only once on mount
+  }, [fetchDashboard]); // Run only once on mount
 
   useEffect(() => {
     if (!loading) {

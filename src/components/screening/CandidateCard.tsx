@@ -65,13 +65,13 @@ const CandidateCardComponent: React.FC<CandidateCardProps> = ({
         <div className="mb-4">
           <p className="text-xs sm:text-sm font-medium text-gray-800 mb-2">Skills:</p>
           <div className="flex flex-wrap gap-1" role="list" aria-label="Candidate skills">
-            {applicant.profile.skills.slice(0, 6).map((skill, index) => (
+            {applicant.profile.skills.slice(0, 6).map((skill) => (
               <span
-                key={index}
+                key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
                 className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
                 role="listitem"
               >
-                {skill}
+                {skill.name}
               </span>
             ))}
             {applicant.profile.skills.length > 6 && (

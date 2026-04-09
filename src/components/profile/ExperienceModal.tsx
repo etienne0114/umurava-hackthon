@@ -4,7 +4,7 @@ import { Input } from '../common/Input';
 import { Select } from '../common/Select';
 import { RichTextEditor } from '../common/RichTextEditor';
 import { ExperienceEntry } from '@/store/slices/authSlice';
-import { Calendar, Briefcase, Building2 } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import clsx from 'clsx';
 
 interface ExperienceModalProps {

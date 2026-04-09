@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import apiClient from '@/store/api/apiClient';
 import { Assessment, Job } from '@/types';
 import { ClipboardCheck, Clock, CheckCircle2 } from 'lucide-react';
@@ -23,7 +23,7 @@ export function QuickTestsBoard() {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const autoSubmittedRef = useRef(false);
 
-  const loadAssessments = async () => {
+  const loadAssessments = useCallback(async () => {
     try {
       setLoading(true);
       const res = await apiClient.get('/assessments/my');
@@ -35,11 +35,11 @@ export function QuickTestsBoard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadAssessments();
-  }, []);
+  }, [loadAssessments]);
 
   const openAssessment = async (assessment: Assessment) => {
     const initialSelections = assessment.questions.map((q) => {
@@ -77,38 +77,41 @@ export function QuickTestsBoard() {
     }
   };
 
-  const submitAssessment = async (autoSubmit: boolean = false) => {
-    if (!selectedAssessment) return;
+  const submitAssessment = useCallback(
+    async (autoSubmit: boolean = false) => {
+      if (!selectedAssessment) return;
 
-    if (!autoSubmit) {
-      const hasEmpty = draftSelections.some((idx) => idx === -1 || idx === undefined);
-      if (hasEmpty) {
-        toast.error('Please answer all questions before submitting');
-        return;
+      if (!autoSubmit) {
+        const hasEmpty = draftSelections.some((idx) => idx === -1 || idx === undefined);
+        if (hasEmpty) {
+          toast.error('Please answer all questions before submitting');
+          return;
+        }
       }
-    }
 
-    try {
-      setSubmitting(true);
-      await apiClient.post(`/assessments/my/${selectedAssessment._id}/submit`, {
-        answers: selectedAssessment.questions.map((q, idx) => ({
-          question: q.question,
-          answer: Array.isArray(q.options) && draftSelections[idx] >= 0 ? q.options[draftSelections[idx]] : '',
-          selectedOptionIndex: draftSelections[idx] >= 0 ? draftSelections[idx] : undefined,
-        })),
-        autoSubmit,
-      });
-      toast.success(autoSubmit ? 'Time is up. Quick test submitted.' : 'Quick test submitted successfully');
-      setSelectedAssessment(null);
-      setStartedAt(null);
-      setTimeLeft(null);
-      await loadAssessments();
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to submit quick test');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+      try {
+        setSubmitting(true);
+        await apiClient.post(`/assessments/my/${selectedAssessment._id}/submit`, {
+          answers: selectedAssessment.questions.map((q, idx) => ({
+            question: q.question,
+            answer: Array.isArray(q.options) && draftSelections[idx] >= 0 ? q.options[draftSelections[idx]] : '',
+            selectedOptionIndex: draftSelections[idx] >= 0 ? draftSelections[idx] : undefined,
+          })),
+          autoSubmit,
+        });
+        toast.success(autoSubmit ? 'Time is up. Quick test submitted.' : 'Quick test submitted successfully');
+        setSelectedAssessment(null);
+        setStartedAt(null);
+        setTimeLeft(null);
+        await loadAssessments();
+      } catch (error: any) {
+        toast.error(error?.message || 'Failed to submit quick test');
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [selectedAssessment, draftSelections, loadAssessments]
+  );
 
   useEffect(() => {
     if (!selectedAssessment || selectedAssessment.status === 'completed' || !startedAt) return;
@@ -130,7 +133,7 @@ export function QuickTestsBoard() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [selectedAssessment, startedAt]);
+  }, [selectedAssessment, startedAt, submitAssessment]);
 
   const formatTime = (seconds: number | null) => {
     if (seconds === null || Number.isNaN(seconds)) return '--:--';

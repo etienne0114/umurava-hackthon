@@ -1,21 +1,71 @@
-export interface WeightConfig {
-  skills: number;
-  experience: number;
-  education: number;
-  relevance: number;
+export type SkillLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+export type LanguageProficiency = 'Basic' | 'Conversational' | 'Fluent' | 'Native';
+
+export interface SkillEntry {
+  name: string;
+  level: SkillLevel;
+  yearsOfExperience?: number;
+}
+
+export interface LanguageEntry {
+  name: string;
+  proficiency: LanguageProficiency;
 }
 
 export interface ExperienceEntry {
   title: string;
   company: string;
-  duration: string;
+  duration?: string;
   description?: string;
+  startDate?: string;
+  endDate?: string;
+  technologies?: string[];
+  isCurrent?: boolean;
 }
 
 export interface EducationEntry {
   degree: string;
   institution: string;
-  year: string;
+  fieldOfStudy?: string;
+  startYear?: number;
+  endYear?: number;
+}
+
+export interface CertificationEntry {
+  name: string;
+  issuer: string;
+  issueDate?: string;
+}
+
+export interface ProjectEntry {
+  name: string;
+  description: string;
+  role: string;
+  technologies: string[];
+  link?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface Availability {
+  status: 'Available' | 'Open to Opportunities' | 'Not Available';
+  type: 'Full-time' | 'Part-time' | 'Contract';
+  startDate?: string;
+}
+
+export interface SocialLinks {
+  linkedin?: string;
+  github?: string;
+  portfolio?: string;
+  twitter?: string;
+  website?: string;
+}
+
+export interface WeightConfig {
+  skills: number;
+  experience: number;
+  education: number;
+  relevance: number;
 }
 
 export interface JobRequirements {
@@ -35,18 +85,35 @@ export type Recommendation = 'highly_recommended' | 'recommended' | 'consider' |
 export type SessionStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type UserRole = 'talent' | 'company';
 
+export interface UserProfile {
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  headline?: string;
+  location?: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  bio?: string;
+  avatar?: string;
+  profileCompletion?: number;
+  videoUrl?: string;
+  skills?: SkillEntry[];
+  languages?: LanguageEntry[];
+  experience?: ExperienceEntry[];
+  education?: EducationEntry[];
+  certifications?: CertificationEntry[];
+  projects?: ProjectEntry[];
+  availability?: Availability;
+  socialLinks?: SocialLinks;
+  resumeUrl?: string;
+}
+
 export interface User {
   id: string;
   email: string;
   role: UserRole;
-  profile: {
-    name: string;
-    phone?: string;
-    company?: string;
-    position?: string;
-    bio?: string;
-    avatar?: string;
-  };
+  profile: UserProfile;
   isVerified: boolean;
 }
 
@@ -88,16 +155,7 @@ export interface Applicant {
   jobId: string;
   source: ApplicantSource;
   sourceId?: string;
-  profile: {
-    name: string;
-    email: string;
-    phone?: string;
-    skills: string[];
-    experience: ExperienceEntry[];
-    education: EducationEntry[];
-    summary?: string;
-    resumeUrl?: string;
-  };
+  profile: UserProfile & { email: string; summary?: string };
   metadata?: {
     fileName?: string;
     uploadedAt?: string;
@@ -108,16 +166,18 @@ export interface Applicant {
   updatedAt: string;
 }
 
+export interface AssessmentQuestion {
+  question: string;
+  options?: string[];
+  expectedAnswer?: string;
+  correctOptionIndex?: number;
+}
+
 export interface Assessment {
   _id: string;
   jobId: string | Job;
   applicantId: string | Applicant;
-  questions: Array<{
-    question: string;
-    options?: string[];
-    correctOptionIndex?: number;
-    expectedAnswer?: string;
-  }>;
+  questions: AssessmentQuestion[];
   candidateAnswers?: Array<{
     question: string;
     answer: string;
@@ -145,46 +205,4 @@ export interface Assessment {
   submittedAt?: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ScreeningResult {
-  _id: string;
-  applicantId: string | Applicant;
-  jobId: string;
-  sessionId: string;
-  rank: number;
-  matchScore: number;
-  evaluation: {
-    strengths: string[];
-    gaps: string[];
-    risks: string[];
-    recommendation: Recommendation;
-    reasoning: string;
-    aiFallback?: boolean;
-  };
-  scoreBreakdown: {
-    skills: number;
-    experience: number;
-    education: number;
-    relevance: number;
-  };
-  createdAt: string;
-}
-
-export interface ScreeningSession {
-  _id: string;
-  jobId: string;
-  status: SessionStatus;
-  totalApplicants: number;
-  processedApplicants: number;
-  options: {
-    topN: number;
-    minScore: number;
-    weights: WeightConfig;
-    batchMode?: boolean;
-    batchSize?: number;
-  };
-  error?: string;
-  startedAt: string;
-  completedAt?: string;
 }

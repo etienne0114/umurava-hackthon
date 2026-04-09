@@ -8,7 +8,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { 
   User, Building2, Mail, Phone, Briefcase, 
   Edit3, Save, X, Loader2, CheckCircle2, 
-  MapPin, Globe, ShieldCheck, Camera
+  Globe, ShieldCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -73,10 +73,6 @@ function ProfileContent() {
       setLoading(false);
     }
   };
-
-  const initials = form.name
-    ? form.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-    : 'C';
 
   return (
     <div className="space-y-6">

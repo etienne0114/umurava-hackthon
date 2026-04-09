@@ -47,13 +47,12 @@ function UploadApplicantsContent() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Upload Applicants</h1>
 
         <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 max-w-6xl">
-          <FileUploader
-            jobId={jobId}
-            acceptedFormats={['.csv', '.xlsx', '.xls', '.pdf']}
-            maxSize={10 * 1024 * 1024}
-            onUploadComplete={handleUploadComplete}
-            onError={handleError}
-          />
+        <FileUploader
+          jobId={jobId}
+          maxSize={10 * 1024 * 1024}
+          onUploadComplete={handleUploadComplete}
+          onError={handleError}
+        />
 
           <UmuravaImporter
             jobId={jobId}

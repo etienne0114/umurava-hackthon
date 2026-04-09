@@ -1,7 +1,6 @@
 'use client';
 
 import React, { memo } from 'react';
-import { Card } from '../common/Card';
 import { Job } from '@/types';
 import { 
   MapPin, 
@@ -10,8 +9,8 @@ import {
   Users, 
   ChevronRight,
   MoreVertical,
-  Calendar,
-  Globe
+  Globe,
+  Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -116,6 +115,15 @@ const JobCardComponent: React.FC<JobCardProps> = ({ job, onView, onEdit, onDelet
             title="Edit Posting"
           >
             <Briefcase size={18} />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={() => onDelete(job._id)}
+            className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-gray-100"
+            title="Delete Posting"
+          >
+            <Trash2 size={18} />
           </button>
         )}
       </div>

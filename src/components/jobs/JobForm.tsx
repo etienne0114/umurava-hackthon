@@ -3,17 +3,12 @@
 import React, { useState, useCallback, memo, useMemo, useEffect } from 'react';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
-import { TextArea } from '../common/TextArea';
 import { RichTextEditor } from '../common/RichTextEditor';
 import { TagInput } from '../common/TagInput';
 import { Modal } from '../common/Modal';
-import { Card } from '../common/Card';
 import { Job } from '@/types';
 import { 
   Briefcase, 
-  MapPin, 
-  GraduationCap, 
-  Clock, 
   Target, 
   Settings2,
   CheckCircle2,
@@ -570,5 +565,4 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
 
 // Memoize the form component to prevent unnecessary re-renders
 export const JobForm = memo(JobFormComponent);
-
 

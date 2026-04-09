@@ -1,8 +1,7 @@
 import React from 'react';
 import { User } from '@/store/slices/authSlice';
 import { AvatarUpload } from '../profile/AvatarUpload';
-import { MapPin, Phone, Mail, Share2, Edit3, Eye, Upload } from 'lucide-react';
-import clsx from 'clsx';
+import { MapPin, Phone, Share2, Edit3, Eye } from 'lucide-react';
 import { ProfileRatingGauge } from './ProfileRatingGauge';
 import { CVUploadTrigger } from './CVUploadTrigger';
 import { ParsedResumeProfile } from '@/store/slices/authSlice';
@@ -44,12 +43,14 @@ export const ProfileOverviewCard: React.FC<ProfileOverviewCardProps> = ({
           </div>
 
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm font-semibold text-gray-400">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-gray-50 rounded-lg group-hover:bg-indigo-50 transition-colors">
-                <MapPin size={14} className="text-gray-400" />
+            {user?.profile?.location && (
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-gray-50 rounded-lg group-hover:bg-indigo-50 transition-colors">
+                  <MapPin size={14} className="text-gray-400" />
+                </div>
+                <span>{user.profile.location}</span>
               </div>
-              <span>Rwanda</span>
-            </div>
+            )}
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-gray-50 rounded-lg group-hover:bg-indigo-50 transition-colors">
                 <Phone size={14} className="text-gray-400" />
@@ -58,10 +59,10 @@ export const ProfileOverviewCard: React.FC<ProfileOverviewCardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-center sm:justify-start gap-3 pt-2">
-             <span className="px-4 py-1.5 bg-blue-600 text-white text-[11px] font-black rounded-full shadow-lg shadow-blue-100 uppercase tracking-widest">
-               Junior (1-3 Years)
-             </span>
+          <div className="flex items-center gap-2 pt-2">
+            <span className="text-xs text-gray-500 uppercase tracking-wide">
+              {user?.profile?.headline || user?.profile?.position || 'Talent Profile'}
+            </span>
           </div>
         </div>
 

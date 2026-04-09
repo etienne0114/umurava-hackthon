@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { TalentSidebar } from './TalentSidebar';
-import { Bell, Search } from 'lucide-react';
 import { useAppSelector } from '@/store';
 import Link from 'next/link';
 import { NotificationDropdown } from './NotificationDropdown';
@@ -10,13 +9,6 @@ import { SearchDropdown } from './SearchDropdown';
 
 export const TalentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAppSelector((state) => state.auth);
-
-  const initials = user?.profile?.name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || 'T';
 
   return (
     <div className="flex bg-gray-50 min-h-screen">

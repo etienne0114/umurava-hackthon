@@ -1,41 +1,15 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import apiClient from '../api/apiClient';
-
-export type UserRole = 'talent' | 'company';
-
-export interface ExperienceEntry {
-  title: string;
-  company: string;
-  duration: string;
-  description?: string;
-}
-
-export interface EducationEntry {
-  degree: string;
-  institution: string;
-  year: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  role: UserRole;
-  profile: {
-    name: string;
-    phone?: string;
-    company?: string;
-    position?: string;
-    bio?: string;
-    avatar?: string;
-    profileCompletion?: number;
-    videoUrl?: string;
-    skills?: string[];
-    languages?: string[];
-    experience?: ExperienceEntry[];
-    education?: EducationEntry[];
-    resumeUrl?: string;
-  };
-}
+import {
+  User,
+  ExperienceEntry,
+  EducationEntry,
+  CertificationEntry,
+  ProjectEntry,
+  Availability,
+  SocialLinks,
+  UserRole,
+} from '@/types';
 
 export interface ParsedResumeProfile {
   name: string;
@@ -46,6 +20,11 @@ export interface ParsedResumeProfile {
   languages: string[];
   experience: ExperienceEntry[];
   education: EducationEntry[];
+  summary?: string;
+  projects?: ProjectEntry[];
+  certifications?: CertificationEntry[];
+  availability?: Availability;
+  socialLinks?: SocialLinks;
 }
 
 interface AuthState {
@@ -73,6 +52,10 @@ export const register = createAsyncThunk(
     password: string;
     role: UserRole;
     name: string;
+    firstName?: string;
+    lastName?: string;
+    headline?: string;
+    location?: string;
     phone?: string;
     company?: string;
     position?: string;

@@ -9,14 +9,12 @@ import { Applicant } from '@/types';
 interface ApplicantListProps {
   applicants: Applicant[];
   loading?: boolean;
-  onView?: (applicantId: string) => void;
   onRemove?: (applicantId: string) => void;
 }
 
 export const ApplicantList: React.FC<ApplicantListProps> = ({
   applicants,
   loading,
-  onView,
   onRemove,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,7 +27,7 @@ export const ApplicantList: React.FC<ApplicantListProps> = ({
       applicant.profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       applicant.profile.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       applicant.profile.skills.some((skill) =>
-        skill.toLowerCase().includes(searchTerm.toLowerCase())
+        skill.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
     const matchesSource = sourceFilter === 'all' || applicant.source === sourceFilter;

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { ExperienceEntry } from '@/store/slices/authSlice';
 import { Edit2, Trash2, Building2 } from 'lucide-react';
-import clsx from 'clsx';
-
 interface ExperienceListItemProps {
   experience: ExperienceEntry;
   onEdit?: () => void;

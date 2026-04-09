@@ -42,7 +42,7 @@ function JobDetailContent() {
   const dispatch = useAppDispatch();
 
   const { currentJob, loading: jobLoading } = useAppSelector((state) => state.jobs);
-  const { session, loading: screeningLoading } = useAppSelector((state) => state.screening);
+  const { loading: screeningLoading } = useAppSelector((state) => state.screening);
   const { user } = useAppSelector((state) => state.auth);
   const isCompany = user?.role === 'company';
 
@@ -316,9 +316,12 @@ function JobDetailContent() {
                     <p className="text-xs text-gray-400 truncate">{a.profile.email}</p>
                   </div>
                   <div className="flex flex-wrap gap-1 hidden sm:flex">
-                    {a.profile.skills.slice(0, 3).map(s => (
-                      <span key={s} className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-semibold rounded-md">
-                        {s}
+                    {a.profile.skills.slice(0, 3).map((skill) => (
+                      <span
+                        key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
+                        className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-semibold rounded-md"
+                      >
+                        {skill.name}
                       </span>
                     ))}
                   </div>

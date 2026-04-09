@@ -9,7 +9,7 @@ import {
   clearError,
   User,
 } from '@/store/slices/authSlice';
-import { UserRole } from '@/store/slices/authSlice';
+import { UserRole } from '@/types';
 
 export const useAuth = (autoFetch: boolean = false) => {
   const dispatch = useAppDispatch();
@@ -26,6 +26,10 @@ export const useAuth = (autoFetch: boolean = false) => {
     password: string;
     role: UserRole;
     name: string;
+    firstName?: string;
+    lastName?: string;
+    headline?: string;
+    location?: string;
     phone?: string;
     company?: string;
     position?: string;

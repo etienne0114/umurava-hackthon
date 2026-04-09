@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { useAppDispatch } from '@/store';
 import { uploadAvatar } from '@/store/slices/authSlice';
-import { Camera, Loader2, Upload, X } from 'lucide-react';
+import { Camera, Loader2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 

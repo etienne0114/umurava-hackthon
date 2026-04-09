@@ -8,7 +8,6 @@ import { Applicant } from '@/types';
 
 interface FileUploaderProps {
   jobId: string;
-  acceptedFormats: string[];
   maxSize: number;
   onUploadComplete: (applicants: Applicant[]) => void;
   onError: (error: string) => void;
@@ -16,7 +15,6 @@ interface FileUploaderProps {
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
   jobId,
-  acceptedFormats,
   maxSize,
   onUploadComplete,
   onError,

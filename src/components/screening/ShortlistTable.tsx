@@ -1,23 +1,18 @@
 'use client';
 
 import React, { useState, useMemo, memo } from 'react';
-import { ScreeningResult, Recommendation } from '@/types';
+import { ScreeningResult } from '@/types';
 
 interface ShortlistTableProps {
   results: ScreeningResult[];
   onSelectCandidate: (applicantId: string) => void;
   sortBy?: 'rank' | 'score' | 'name';
-  filterBy?: {
-    minScore?: number;
-    recommendation?: Recommendation[];
-  };
 }
 
 const ShortlistTableComponent: React.FC<ShortlistTableProps> = ({
   results,
   onSelectCandidate,
   sortBy = 'rank',
-  filterBy,
 }) => {
   const [sortField, setSortField] = useState<'rank' | 'score'>(sortBy as any);
 

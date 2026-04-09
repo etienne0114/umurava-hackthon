@@ -20,6 +20,10 @@ export default function RegisterPage() {
     confirmPassword: '',
     role: 'company' as 'talent' | 'company',
     name: '',
+    firstName: '',
+    lastName: '',
+    headline: '',
+    location: '',
     phone: '',
     company: '',
     position: '',
@@ -51,6 +55,10 @@ export default function RegisterPage() {
           password: formData.password,
           role: formData.role,
           name: formData.name,
+          firstName: formData.firstName || undefined,
+          lastName: formData.lastName || undefined,
+          headline: formData.headline || undefined,
+          location: formData.location || undefined,
           phone: formData.phone || undefined,
           company: formData.company || undefined,
           position: formData.position || undefined,
@@ -112,6 +120,25 @@ export default function RegisterPage() {
               />
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="First Name"
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="John"
+              />
+              <Input
+                label="Last Name"
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Doe"
+              />
+            </div>
+
             <Input
               label="Phone Number"
               type="tel"
@@ -120,6 +147,25 @@ export default function RegisterPage() {
               onChange={handleChange}
               placeholder="+1234567890"
             />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Headline"
+                type="text"
+                name="headline"
+                value={formData.headline}
+                onChange={handleChange}
+                placeholder="e.g. Backend Lead – AI Systems"
+              />
+              <Input
+                label="Location"
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="City, Country"
+              />
+            </div>
 
             {formData.role === 'company' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

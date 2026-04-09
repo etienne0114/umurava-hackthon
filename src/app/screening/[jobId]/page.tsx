@@ -71,11 +71,6 @@ export default function ScreeningResultsPage() {
     }
   };
 
-  const selectedResult = results.find((r) => {
-    const id = typeof r.applicantId === 'string' ? r.applicantId : r.applicantId._id;
-    return id === selectedApplicantId;
-  });
-
   if (loading && results.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

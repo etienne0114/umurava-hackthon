@@ -6,7 +6,7 @@ import { fetchJobs } from '@/store/slices/jobSlice';
 import { fetchApplicants, uploadApplicants, deleteApplicant } from '@/store/slices/applicantSlice';
 import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Job, Applicant } from '@/types';
+import type { Applicant } from '@/types';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Upload,
@@ -81,10 +81,10 @@ function ApplicantCard({
         <div className="px-5 pb-3 flex flex-wrap gap-1.5">
           {applicant.profile.skills.slice(0, 5).map((skill) => (
             <span
-              key={skill}
+              key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
               className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-medium rounded-md"
             >
-              {skill}
+              {skill.name}
             </span>
           ))}
           {applicant.profile.skills.length > 5 && (
@@ -216,7 +216,7 @@ function CandidatesContent() {
       !search ||
       a.profile.name.toLowerCase().includes(search.toLowerCase()) ||
       a.profile.email.toLowerCase().includes(search.toLowerCase()) ||
-      a.profile.skills.some((s) => s.toLowerCase().includes(search.toLowerCase()))
+      a.profile.skills.some((skill) => skill.name.toLowerCase().includes(search.toLowerCase()))
   );
 
   const activeJobs = jobs.filter((j) => j.status === 'active' || j.status === 'draft');

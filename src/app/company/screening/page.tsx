@@ -815,7 +815,7 @@ function ResultRow({
                         toast.success('Professional test sent to candidate!');
                         setShowAssessment(false);
                         if (onStatusUpdate) onStatusUpdate();
-                      } catch (err) {
+                      } catch (_err) {
                         toast.error('Failed to finalize assessment');
                       }
                     }}
@@ -937,7 +937,7 @@ function ScreeningContent() {
     if (initialJobId && initialJobId !== selectedJobId) {
       setSelectedJobId(initialJobId);
     }
-  }, [initialJobId]);
+  }, [initialJobId, selectedJobId]);
 
   // Poll session status when in_progress
   useEffect(() => {
@@ -1268,4 +1268,3 @@ export default function CompanyScreeningPage() {
     </ProtectedRoute>
   );
 }
-

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Edit3, PlusCircle } from 'lucide-react';
-import clsx from 'clsx';
+import { SkillEntry } from '@/types';
 
 interface BioCardProps {
   bio: string;
@@ -28,9 +28,9 @@ export const BioCard: React.FC<BioCardProps> = ({ bio, onEdit }) => {
 };
 
 interface SkillsCardProps {
-  skills: string[];
+  skills: SkillEntry[];
   onAdd: () => void;
-  onRemove: (skill: string) => void;
+  onRemove: (skill: SkillEntry) => void;
 }
 
 export const SkillsCard: React.FC<SkillsCardProps> = ({ skills, onAdd, onRemove }) => {
@@ -49,23 +49,28 @@ export const SkillsCard: React.FC<SkillsCardProps> = ({ skills, onAdd, onRemove 
       
       {skills.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {skills
-            .filter(s => s.toLowerCase() !== 'skills') // Remove redundant "Skills" tag
-            .map((skill) => (
-            <span 
-              key={skill}
+        {skills.length > 0 ? (
+          skills.map((skill) => (
+            <span
+              key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-gray-700 text-[11px] font-black rounded-full border-2 border-indigo-50 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all cursor-default shadow-sm shadow-indigo-100/20"
             >
-              {skill}
-              <button 
+              <span className="font-bold">{skill.name}</span>
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                {skill.level} {skill.yearsOfExperience ? `· ${skill.yearsOfExperience} yrs` : ''}
+              </span>
+              <button
                 onClick={() => onRemove(skill)}
                 className="text-gray-300 hover:text-red-500 transition-colors"
-                title={`Remove ${skill}`}
+                title={`Remove ${skill.name}`}
               >
                 ×
               </button>
             </span>
-          ))}
+          ))
+        ) : (
+          <p className="text-sm text-gray-400 italic">No skills added yet.</p>
+        )}
         </div>
       ) : (
         <p className="text-sm text-gray-400 italic">No skills added yet.</p>
