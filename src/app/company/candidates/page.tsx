@@ -146,7 +146,7 @@ function CandidatesContent() {
   const searchParams = useSearchParams();
   const preselectedJobId = searchParams.get('jobId') || '';
   const { jobs } = useAppSelector((state) => state.jobs);
-  const { applicants, loading, uploadProgress } = useAppSelector((state) => state.applicants);
+  const { applicants, loading, uploadProgress, uploadMeta } = useAppSelector((state) => state.applicants);
   const [selectedJobId, setSelectedJobId] = useState<string>(preselectedJobId);
   const [search, setSearch] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -183,7 +183,10 @@ function CandidatesContent() {
     setUploading(true);
     try {
       const result = await dispatch(uploadApplicants({ jobId: selectedJobId, file })).unwrap();
-      toast.success(`${Array.isArray(result) ? result.length : 0} candidates uploaded successfully`);
+      const createdCount = Array.isArray(result?.applicants) ? result.applicants.length : 0;
+      const parsedCount = result?.meta?.parsed ?? createdCount;
+      const duplicates = result?.meta?.duplicates ?? 0;
+      toast.success(`Uploaded ${createdCount} candidates (${parsedCount} rows parsed, ${duplicates} duplicates)`);
     } catch (err: any) {
       toast.error(err.message || 'Upload failed');
     } finally {
@@ -312,6 +315,16 @@ function CandidatesContent() {
                   </div>
                 </div>
               )}
+            </div>
+          ) : uploadMeta ? (
+            <div className="space-y-2">
+              <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <CheckCircle size={22} className="text-emerald-500" />
+              </div>
+              <p className="text-sm font-semibold text-emerald-700">
+                Upload summary: {uploadMeta.created} created, {uploadMeta.parsed} parsed, {uploadMeta.duplicates} duplicates
+              </p>
+              <p className="text-xs text-gray-400">Candidates are now available for AI screening.</p>
             </div>
           ) : (
             <>

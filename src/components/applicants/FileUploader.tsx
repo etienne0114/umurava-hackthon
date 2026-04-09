@@ -88,6 +88,18 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       <h3 id="file-uploader-heading" className="text-base sm:text-lg font-semibold mb-4">
         Upload Applicants File
       </h3>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+        <span className="font-semibold text-gray-600">Need a template?</span>
+        <a
+          href="/templates/candidates-template.csv"
+          download
+          className="text-indigo-600 hover:text-indigo-700 font-semibold underline underline-offset-2"
+        >
+          Download CSV template
+        </a>
+        <span className="text-gray-400">PDF uploads accept one candidate per file.</span>
+      </div>
       
       <div
         {...getRootProps()}

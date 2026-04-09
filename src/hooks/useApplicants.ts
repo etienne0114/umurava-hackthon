@@ -12,7 +12,7 @@ import {
 
 export const useApplicants = (jobId?: string, autoFetch: boolean = false) => {
   const dispatch = useAppDispatch();
-  const { applicants, loading, error, uploadProgress } = useAppSelector(
+  const { applicants, loading, error, uploadProgress, uploadMeta } = useAppSelector(
     (state) => state.applicants
   );
 
@@ -58,6 +58,7 @@ export const useApplicants = (jobId?: string, autoFetch: boolean = false) => {
     loading,
     error,
     uploadProgress,
+    uploadMeta,
     uploadApplicants: handleUploadApplicants,
     importFromUmurava: handleImportFromUmurava,
     fetchApplicants: handleFetchApplicants,

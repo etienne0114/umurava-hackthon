@@ -7,6 +7,11 @@ interface ApplicantState {
   loading: boolean;
   error: string | null;
   uploadProgress: number;
+  uploadMeta: {
+    parsed: number;
+    created: number;
+    duplicates: number;
+  } | null;
 }
 
 const initialState: ApplicantState = {
@@ -14,6 +19,7 @@ const initialState: ApplicantState = {
   loading: false,
   error: null,
   uploadProgress: 0,
+  uploadMeta: null,
 };
 
 export const uploadApplicants = createAsyncThunk(
@@ -26,7 +32,10 @@ export const uploadApplicants = createAsyncThunk(
     const response = await apiClient.post('/applicants/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return response.data.data;
+    return {
+      applicants: response.data.data,
+      meta: response.data.meta,
+    };
   }
 );
 
@@ -85,16 +94,19 @@ const applicantSlice = createSlice({
         state.loading = true;
         state.error = null;
         state.uploadProgress = 0;
+        state.uploadMeta = null;
       })
-      .addCase(uploadApplicants.fulfilled, (state, action: PayloadAction<Applicant[]>) => {
+      .addCase(uploadApplicants.fulfilled, (state, action: PayloadAction<{ applicants: Applicant[]; meta: any }>) => {
         state.loading = false;
-        state.applicants = [...state.applicants, ...action.payload];
+        state.applicants = [...state.applicants, ...(action.payload.applicants || [])];
         state.uploadProgress = 100;
+        state.uploadMeta = action.payload.meta || null;
       })
       .addCase(uploadApplicants.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to upload applicants';
         state.uploadProgress = 0;
+        state.uploadMeta = null;
       })
       .addCase(importFromUmurava.pending, (state) => {
         state.loading = true;
