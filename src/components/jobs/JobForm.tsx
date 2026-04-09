@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useMemo, useEffect } from 'react';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { TextArea } from '../common/TextArea';
@@ -17,8 +17,9 @@ import {
   Target, 
   Settings2,
   CheckCircle2,
-  AlertCircle,
-  Plus
+  Plus,
+  Sparkles,
+  Star
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -29,6 +30,13 @@ interface JobFormProps {
 }
 
 const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCancel }) => {
+  const weightKeys = useMemo(() => ([
+    { key: 'skillsWeight', label: 'Core Skills', color: 'bg-indigo-500' },
+    { key: 'experienceWeight', label: 'Work Experience', color: 'bg-emerald-500' },
+    { key: 'educationWeight', label: 'Education Match', color: 'bg-amber-500' },
+    { key: 'relevanceWeight', label: 'Profile Relevance', color: 'bg-rose-500' },
+  ] as const), []);
+
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -45,6 +53,13 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
   });
 
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
+  const [weightMode, setWeightMode] = useState<'sliders' | 'importance'>('sliders');
+  const [importanceRatings, setImportanceRatings] = useState<Record<string, number>>({
+    skillsWeight: Math.max(1, Math.min(5, Math.round((initialData?.weights?.skills || 0.4) * 5))),
+    experienceWeight: Math.max(1, Math.min(5, Math.round((initialData?.weights?.experience || 0.3) * 5))),
+    educationWeight: Math.max(1, Math.min(5, Math.round((initialData?.weights?.education || 0.2) * 5))),
+    relevanceWeight: Math.max(1, Math.min(5, Math.round((initialData?.weights?.relevance || 0.1) * 5))),
+  });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,6 +69,134 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
     setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
+  const normalizeWeights = useCallback(
+    (weights: Record<string, number>, focusKey: string) => {
+      const keys = weightKeys.map((k) => k.key);
+      const clamp = (val: number) => Math.min(1, Math.max(0, val));
+
+      const focusValue = clamp(weights[focusKey] || 0);
+      const normalized: Record<string, number> = { [focusKey]: focusValue };
+
+      const remaining = Math.max(0, 1 - focusValue);
+      const otherKeys = keys.filter((key) => key !== focusKey);
+      if (otherKeys.length === 0) return normalized;
+
+      const existingSum = otherKeys.reduce((acc, key) => acc + (weights[key] || 0), 0);
+      if (existingSum <= 0) {
+        const even = remaining / otherKeys.length;
+        otherKeys.forEach((key) => {
+          normalized[key] = even;
+        });
+        return normalized;
+      }
+
+      otherKeys.forEach((key) => {
+        const ratio = (weights[key] || 0) / existingSum;
+        normalized[key] = ratio * remaining;
+      });
+
+      return normalized;
+    },
+    [weightKeys]
+  );
+
+  const handleWeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numericValue = Math.min(100, Math.max(0, Number(value)));
+    const decimalValue = numericValue / 100;
+
+    setFormData((prev) => {
+      const nextWeights = {
+        skillsWeight: Number(prev.skillsWeight),
+        experienceWeight: Number(prev.experienceWeight),
+        educationWeight: Number(prev.educationWeight),
+        relevanceWeight: Number(prev.relevanceWeight),
+      };
+
+      nextWeights[name as keyof typeof nextWeights] = decimalValue;
+      const normalized = normalizeWeights(nextWeights, name);
+
+      return {
+        ...prev,
+        ...normalized,
+      };
+    });
+  }, [normalizeWeights]);
+
+
+  const applyImportanceRatings = useCallback((ratings: Record<string, number>) => {
+    const keys = weightKeys.map((k) => k.key);
+    const total = keys.reduce((acc, key) => acc + (ratings[key] || 0), 0);
+    const safeTotal = total > 0 ? total : keys.length;
+    const normalized: Record<string, number> = {};
+    keys.forEach((key) => {
+      const value = ratings[key] || 1;
+      normalized[key] = value / safeTotal;
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      ...normalized,
+    }));
+  }, [weightKeys]);
+
+  const handleRatingChange = useCallback((key: string, rating: number) => {
+    setImportanceRatings((prev) => {
+      const updated = { ...prev, [key]: rating };
+      applyImportanceRatings(updated);
+      return updated;
+    });
+  }, [applyImportanceRatings]);
+
+  useEffect(() => {
+    if (weightMode !== 'importance') return;
+    applyImportanceRatings(importanceRatings);
+  }, [weightMode, importanceRatings, applyImportanceRatings]);
+
+  useEffect(() => {
+    if (weightMode !== 'sliders') return;
+    const current = {
+      skillsWeight: Number(formData.skillsWeight),
+      experienceWeight: Number(formData.experienceWeight),
+      educationWeight: Number(formData.educationWeight),
+      relevanceWeight: Number(formData.relevanceWeight),
+    };
+    const normalized = normalizeWeights(current, 'skillsWeight');
+    setFormData((prev) => ({ ...prev, ...normalized }));
+  }, [weightMode, normalizeWeights, formData.skillsWeight, formData.experienceWeight, formData.educationWeight, formData.relevanceWeight]);
+
+  const strategyPreview = useMemo(() => {
+    const weights = [
+      { key: 'skillsWeight', label: 'Skills', value: Number(formData.skillsWeight) },
+      { key: 'experienceWeight', label: 'Experience', value: Number(formData.experienceWeight) },
+      { key: 'educationWeight', label: 'Education', value: Number(formData.educationWeight) },
+      { key: 'relevanceWeight', label: 'Relevance', value: Number(formData.relevanceWeight) },
+    ].sort((a, b) => b.value - a.value);
+
+    const top = weights[0];
+    const runnerUp = weights[1];
+    if (!top) return 'Balanced screening strategy.';
+
+    if (top.value >= 0.6) {
+      if (top.key === 'skillsWeight') {
+        return 'Current Strategy: High-intensity skill matching. The AI will prioritize technical depth, tool mastery, and portfolio signals.';
+      }
+      if (top.key === 'experienceWeight') {
+        return 'Current Strategy: Experience-first screening. The AI will prioritize tenure, role relevance, and seniority over other factors.';
+      }
+      if (top.key === 'educationWeight') {
+        return 'Current Strategy: Credential-focused screening. The AI will weigh education pedigree and formal qualifications heavily.';
+      }
+      return 'Current Strategy: Context and fit focused. The AI will prioritize overall relevance and holistic profile signals.';
+    }
+
+    if (runnerUp && Math.abs(top.value - runnerUp.value) < 0.1) {
+      return `Current Strategy: Dual-focus on ${top.label.toLowerCase()} and ${runnerUp.label.toLowerCase()} for balanced screening.`;
+    }
+
+    return `Current Strategy: ${top.label}-led screening with supportive weighting from other factors.`;
+  }, [formData]);
+
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -61,12 +204,6 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.skills || formData.skills.trim().length === 0 || formData.skills === '<p></p>') {
       newErrors.skills = 'Skills requirements are required';
-    }
-
-    const weightSum = Number(formData.skillsWeight) + Number(formData.experienceWeight) + 
-                      Number(formData.educationWeight) + Number(formData.relevanceWeight);
-    if (Math.abs(weightSum - 1.0) > 0.01) {
-      newErrors.weights = `Weights must sum to 1.0 (current: ${weightSum.toFixed(2)})`;
     }
 
     setErrors(newErrors);
@@ -230,9 +367,9 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
                     value={formData.skills}
                     onChange={(content) => setFormData(prev => ({ ...prev, skills: content }))}
                     placeholder="e.g. 
-• Proficient in TypeScript and React
-• Experience with Node.js and MongoDB
-• Knowledge of AWS Cloud services..."
+- Proficient in TypeScript and React
+- Experience with Node.js and MongoDB
+- Knowledge of AWS Cloud services..."
                   />
                   <div className="flex justify-end pt-4 border-t border-gray-100">
                     <Button
@@ -304,43 +441,102 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
                 <p className="text-sm text-gray-500">Assign importance weights for automated screening</p>
               </div>
             </div>
-            {errors.weights ? (
-              <div className="flex items-center gap-2 text-red-600 animate-pulse bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
-                <AlertCircle className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">{errors.weights}</span>
+            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">Weights Auto-balanced</span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+                <Sparkles size={14} className="text-indigo-500" />
+                Visual Weight Map
               </div>
-            ) : (
-              <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
-                <CheckCircle2 className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">Weights Balanced (1.0)</span>
+              <div className="flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs font-semibold text-gray-600">
+                <button
+                  type="button"
+                  onClick={() => setWeightMode('sliders')}
+                  className={clsx(
+                    "px-3 py-1 rounded-full transition-all",
+                    weightMode === 'sliders' ? "bg-white shadow text-indigo-600" : "text-gray-500"
+                  )}
+                >
+                  Sliders
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWeightMode('importance')}
+                  className={clsx(
+                    "px-3 py-1 rounded-full transition-all",
+                    weightMode === 'importance' ? "bg-white shadow text-indigo-600" : "text-gray-500"
+                  )}
+                >
+                  Importance
+                </button>
               </div>
-            )}
+            </div>
+
+            <div className="mt-4 h-4 w-full rounded-full overflow-hidden flex">
+              {weightKeys.map((weight) => (
+                <div
+                  key={weight.key}
+                  className={clsx("h-full transition-all", weight.color)}
+                  style={{ width: `${Number(formData[weight.key as keyof typeof formData]) * 100}%` }}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { label: 'Core Skills', key: 'skillsWeight', value: formData.skillsWeight },
-              { label: 'Work Experience', key: 'experienceWeight', value: formData.experienceWeight },
-              { label: 'Education Match', key: 'educationWeight', value: formData.educationWeight },
-              { label: 'Profile Relevance', key: 'relevanceWeight', value: formData.relevanceWeight },
-            ].map((weight) => (
+            {weightKeys.map((weight) => (
               <div key={weight.key} className="p-4 rounded-2xl bg-gray-50 border border-gray-100/50 hover:border-indigo-200 transition-colors">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm font-semibold text-gray-700">{weight.label}</span>
-                  <span className="text-indigo-600 text-lg font-bold">{(Number(weight.value) * 100).toFixed(0)}%</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-700">{weight.label}</span>
+                  </div>
+                  <span className="text-indigo-600 text-lg font-bold">{(Number(formData[weight.key as keyof typeof formData]) * 100).toFixed(0)}%</span>
                 </div>
-                <input
-                  type="range"
-                  name={weight.key}
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={weight.value}
-                  onChange={handleChange}
-                  className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-700 transition-all"
-                />
+
+                {weightMode === 'sliders' ? (
+                  <input
+                    type="range"
+                    name={weight.key}
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={Math.round(Number(formData[weight.key as keyof typeof formData]) * 100)}
+                    onChange={handleWeightChange}
+                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-700 transition-all"
+                  />
+                ) : (
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((starValue) => (
+                      <button
+                        key={starValue}
+                        type="button"
+                        onClick={() => handleRatingChange(weight.key, starValue)}
+                        className={clsx(
+                          "p-1 rounded-full transition-colors",
+                          (importanceRatings[weight.key] || 1) >= starValue ? "text-yellow-500" : "text-gray-300"
+                        )}
+                        title={`Set ${weight.label} to ${starValue} stars`}
+                      >
+                        <Star size={16} fill={(importanceRatings[weight.key] || 1) >= starValue ? 'currentColor' : 'none'} />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+
+          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 text-sm text-indigo-700 flex items-start gap-3">
+            <Sparkles size={16} className="mt-0.5" />
+            <div>
+              <p className="text-xs uppercase font-bold tracking-widest text-indigo-500 mb-1">AI Logic Preview</p>
+              <p className="text-sm font-medium text-indigo-800">{strategyPreview}</p>
+            </div>
           </div>
         </div>
 
@@ -374,3 +570,5 @@ const JobFormComponent: React.FC<JobFormProps> = ({ initialData, onSubmit, onCan
 
 // Memoize the form component to prevent unnecessary re-renders
 export const JobForm = memo(JobFormComponent);
+
+

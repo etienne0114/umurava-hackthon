@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -11,18 +11,17 @@ import {
 } from '@/store/slices/screeningSlice';
 import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ScreeningHeader } from '@/components/screening/ScreeningHeader';
+import { ScreeningConfigCard } from '@/components/screening/ScreeningConfigCard';
 import { ScreeningResult, Recommendation, Assessment } from '@/types';
 import { apiClient } from '@/store/api/apiClient';
 import {
   Brain,
-  Play,
-  RefreshCw,
   ChevronDown,
   Star,
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   XCircle,
   Zap,
   ClipboardCheck,
@@ -83,14 +82,46 @@ function AssessmentModal({
   assessment: Assessment; 
   applicantName: string;
   onClose: () => void;
-  onConfirm: (editedQuestions: Array<{ question: string; expectedAnswer: string }>) => Promise<void>;
+  onConfirm: (
+    editedQuestions: Array<{ question: string; options: string[]; correctOptionIndex: number; expectedAnswer: string }>,
+    dueAt: string | null
+  ) => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
-  const [localQuestions, setLocalQuestions] = useState([...assessment.questions]);
+  const [localQuestions, setLocalQuestions] = useState(
+    assessment.questions.map((q) => ({
+      ...q,
+      options: Array.isArray(q.options) && q.options.length > 0 ? q.options : ['', '', '', ''],
+      correctOptionIndex: Number.isInteger(q.correctOptionIndex) ? q.correctOptionIndex : 0,
+      expectedAnswer: q.expectedAnswer || '',
+    }))
+  );
+  const [dueAt, setDueAt] = useState(() => {
+    if (!assessment.dueAt) return '';
+    const date = new Date(assessment.dueAt);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 16);
+  });
 
   const handleUpdateQuestion = (index: number, field: 'question' | 'expectedAnswer', value: string) => {
     const updated = [...localQuestions];
     updated[index] = { ...updated[index], [field]: value };
+    setLocalQuestions(updated);
+  };
+
+  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string) => {
+    const updated = [...localQuestions];
+    const options = Array.isArray(updated[questionIndex].options)
+      ? [...updated[questionIndex].options]
+      : ['', '', '', ''];
+    while (options.length < 4) options.push('');
+    options[optionIndex] = value;
+    updated[questionIndex] = { ...updated[questionIndex], options };
+    setLocalQuestions(updated);
+  };
+
+  const handleSelectCorrect = (questionIndex: number, optionIndex: number) => {
+    const updated = [...localQuestions];
+    updated[questionIndex] = { ...updated[questionIndex], correctOptionIndex: optionIndex };
     setLocalQuestions(updated);
   };
 
@@ -120,6 +151,22 @@ function AssessmentModal({
              </p>
           </div>
 
+          <div className="bg-white border border-gray-100 rounded-2xl p-5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1 block mb-2">
+              Due Date
+            </label>
+            <input
+              type="datetime-local"
+              value={dueAt}
+              onChange={(e) => setDueAt(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-300 focus:outline-none"
+              min={new Date().toISOString().slice(0, 16)}
+            />
+            <p className="mt-2 text-[11px] text-gray-400">
+              Screening unlocks after the due date if some talents do not submit.
+            </p>
+          </div>
+
           <div className="space-y-6">
             {localQuestions.map((q, i) => (
               <div key={i} className="group relative p-6 bg-white border border-gray-100 rounded-3xl hover:border-indigo-200 transition-all shadow-sm hover:shadow-indigo-100/10">
@@ -138,8 +185,34 @@ function AssessmentModal({
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Options</label>
+                    <div className="space-y-2">
+                      {[0, 1, 2, 3].map((optIdx) => (
+                        <div key={optIdx} className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                            <input
+                              type="radio"
+                              name={`correct-${i}`}
+                              checked={q.correctOptionIndex === optIdx}
+                              onChange={() => handleSelectCorrect(i, optIdx)}
+                              className="text-indigo-600 focus:ring-indigo-500"
+                            />
+                            Correct
+                          </label>
+                          <input
+                            value={q.options?.[optIdx] || ''}
+                            onChange={(e) => handleUpdateOption(i, optIdx, e.target.value)}
+                            className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-300 focus:outline-none"
+                            placeholder={`Option ${optIdx + 1}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest pl-1">Expected Insight</label>
+                    <label className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest pl-1">Correct Answer Rationale</label>
                     <textarea 
                       value={q.expectedAnswer}
                       onChange={(e) => handleUpdateQuestion(i, 'expectedAnswer', e.target.value)}
@@ -162,8 +235,24 @@ function AssessmentModal({
           </button>
           <button 
             onClick={async () => {
+              const hasInvalid = localQuestions.some((q) => {
+                const options = Array.isArray(q.options) ? q.options : [];
+                const hasEmpty = options.length !== 4 || options.some((opt) => !String(opt || '').trim());
+                return !q.question?.trim() || hasEmpty || !Number.isInteger(q.correctOptionIndex);
+              });
+              if (hasInvalid) {
+                toast.error('Each question needs 4 options and a selected correct answer.');
+                return;
+              }
+              if (dueAt) {
+                const dueDate = new Date(dueAt);
+                if (Number.isNaN(dueDate.getTime()) || dueDate.getTime() <= Date.now()) {
+                  toast.error('Please choose a due date in the future.');
+                  return;
+                }
+              }
               setLoading(true);
-              await onConfirm(localQuestions);
+              await onConfirm(localQuestions, dueAt ? new Date(dueAt).toISOString() : null);
               setLoading(false);
             }}
             disabled={loading}
@@ -181,17 +270,20 @@ function BulkActionModal({
   count, 
   jobTitle, 
   sampleQuestions,
+  sampleLoading,
   onClose, 
   onConfirm 
 }: { 
   count: number; 
   jobTitle: string; 
   sampleQuestions?: Assessment['questions'];
+  sampleLoading?: boolean;
   onClose: () => void; 
   onConfirm: () => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const canPreview = Boolean(sampleQuestions && sampleQuestions.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
@@ -214,12 +306,29 @@ function BulkActionModal({
           <div className="bg-gray-50/80 rounded-2xl border border-gray-100 text-left overflow-hidden">
             <button 
               onClick={() => setShowPreview(!showPreview)}
-              className="w-full p-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:bg-white transition-colors"
+              disabled={!canPreview || sampleLoading}
+              className={clsx(
+                "w-full p-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest transition-colors",
+                canPreview && !sampleLoading
+                  ? "text-indigo-600 hover:bg-white"
+                  : "text-gray-300 cursor-not-allowed"
+              )}
             >
-              <span>{showPreview ? 'Hide Sample Questions' : 'Review Sample Questions'}</span>
+              <span>
+                {sampleLoading
+                  ? 'Loading Preview...'
+                  : showPreview
+                  ? 'Hide Sample Questions'
+                  : 'Review Sample Questions'}
+              </span>
               <ChevronDown size={14} className={clsx("transition-transform", showPreview && "rotate-180")} />
             </button>
-            {showPreview && sampleQuestions && (
+            {!sampleLoading && !canPreview && (
+              <div className="p-4 border-t border-gray-100 text-[10px] text-gray-400 font-semibold">
+                Generate at least one quick test to preview sample questions.
+              </div>
+            )}
+            {showPreview && canPreview && (
               <div className="p-4 border-t border-gray-100 max-h-48 overflow-y-auto space-y-3 animate-in slide-in-from-top-2 duration-300">
                 {sampleQuestions.slice(0, 3).map((q, i) => (
                   <div key={i} className="space-y-1">
@@ -227,7 +336,11 @@ function BulkActionModal({
                     <p className="text-[11px] font-bold text-gray-600 leading-snug">{q.question}</p>
                   </div>
                 ))}
-                <p className="text-[9px] text-gray-400 text-center font-bold uppercase pt-2 border-t border-gray-100">And {sampleQuestions.length - 3} more tailored questions...</p>
+                {sampleQuestions.length > 3 && (
+                  <p className="text-[9px] text-gray-400 text-center font-bold uppercase pt-2 border-t border-gray-100">
+                    And {sampleQuestions.length - 3} more tailored questions...
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -455,13 +568,20 @@ function ResultRow({
 
         {/* Recommendation */}
         <td className="px-6 py-4 whitespace-nowrap">
-          <span className={clsx(
-            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold shadow-sm whitespace-nowrap",
-            cfg.color
-          )}>
-            {cfg.icon}
-            {cfg.label}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={clsx(
+              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold shadow-sm whitespace-nowrap",
+              cfg.color
+            )}>
+              {cfg.icon}
+              {cfg.label}
+            </span>
+            {result.evaluation.aiFallback && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700 border border-amber-100">
+                AI fallback
+              </span>
+            )}
+          </div>
         </td>
 
         {/* Action */}
@@ -639,7 +759,7 @@ function ResultRow({
                       applicant?.status === 'hired' ? "bg-emerald-500 text-white shadow-emerald-100" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100"
                     )}
                   >
-                    {hiring ? 'Processing...' : applicant?.status === 'hired' ? '✓ Hired Successfully' : 'Hire Talent'}
+                    {hiring ? 'Processing...' : applicant?.status === 'hired' ? 'Hired Successfully' : 'Hire Talent'}
                   </button>
                 </div>
 
@@ -685,11 +805,12 @@ function ResultRow({
                     assessment={assessment} 
                     applicantName={applicant?.profile.name || 'Candidate'}
                     onClose={() => setShowAssessment(false)}
-                    onConfirm={async (editedQuestions) => {
+                    onConfirm={async (editedQuestions, dueAtValue) => {
                       try {
                         await apiClient.patch(`/assessments/applicant/${applicant?._id}/sent`, {
                           jobId,
-                          questions: editedQuestions
+                          questions: editedQuestions,
+                          dueAt: dueAtValue
                         });
                         toast.success('Professional test sent to candidate!');
                         setShowAssessment(false);
@@ -722,13 +843,94 @@ function ScreeningContent() {
   const [minScore, setMinScore] = useState(0);
   const [starting, setStarting] = useState(false);
   const [polling, setPolling] = useState(false);
+  const [assessmentStatus, setAssessmentStatus] = useState<{
+    total: number;
+    completed: number;
+    pending: number;
+    allCompleted: boolean;
+    latestDueAt?: string;
+    dueDateReached?: boolean;
+    canScreen?: boolean;
+  } | null>(null);
+  const [assessmentStatusLoading, setAssessmentStatusLoading] = useState(false);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [bulkSampleQuestions, setBulkSampleQuestions] = useState<Assessment['questions'] | null>(null);
+  const [bulkSampleLoading, setBulkSampleLoading] = useState(false);
   const [autoFocusApplicantId, setAutoFocusApplicantId] = useState('');
   const [autoFocusJobId, setAutoFocusJobId] = useState('');
 
   useEffect(() => {
     dispatch(fetchJobs());
   }, [dispatch]);
+
+  const fetchAssessmentStatus = async (jobId: string) => {
+    try {
+      setAssessmentStatusLoading(true);
+      const res = await apiClient.get(`/assessments/job/${jobId}/status`);
+      const data = res.data.data || null;
+      setAssessmentStatus(data);
+      return data;
+    } catch {
+      setAssessmentStatus(null);
+      return null;
+    } finally {
+      setAssessmentStatusLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedJobId) {
+      setAssessmentStatus(null);
+      return;
+    }
+
+    fetchAssessmentStatus(selectedJobId);
+  }, [selectedJobId]);
+
+  useEffect(() => {
+    if (!showBulkConfirm) {
+      setBulkSampleQuestions(null);
+      setBulkSampleLoading(false);
+      return;
+    }
+
+    if (results.length === 0) {
+      setBulkSampleQuestions(null);
+      return;
+    }
+
+    let active = true;
+    const sortedResults = [...results].sort((a, b) => a.rank - b.rank);
+    const firstResult = sortedResults[0];
+    const applicantId =
+      typeof firstResult.applicantId === 'string'
+        ? firstResult.applicantId
+        : firstResult.applicantId?._id;
+
+    if (!applicantId) {
+      setBulkSampleQuestions(null);
+      return;
+    }
+
+    const fetchSample = async () => {
+      try {
+        setBulkSampleLoading(true);
+        const res = await apiClient.get(`/assessments/applicant/${applicantId}`);
+        if (!active) return;
+        setBulkSampleQuestions(res.data.data?.questions || null);
+      } catch {
+        if (!active) return;
+        setBulkSampleQuestions(null);
+      } finally {
+        if (active) setBulkSampleLoading(false);
+      }
+    };
+
+    fetchSample();
+    return () => {
+      active = false;
+    };
+  }, [showBulkConfirm, results]);
 
   // Update selection if URL changes
   useEffect(() => {
@@ -795,6 +997,11 @@ function ScreeningContent() {
       toast.error('Select a job first');
       return;
     }
+    const latestStatus = await fetchAssessmentStatus(selectedJobId);
+    if (latestStatus && latestStatus.total > 0 && !latestStatus.canScreen) {
+      toast.error('Quick tests are still in progress. Screening unlocks when the due date is reached.');
+      return;
+    }
     setStarting(true);
     try {
       await dispatch(
@@ -813,6 +1020,11 @@ function ScreeningContent() {
 
   const handleRegenerate = async () => {
     if (!selectedJobId) return;
+    const latestStatus = await fetchAssessmentStatus(selectedJobId);
+    if (latestStatus && latestStatus.total > 0 && !latestStatus.canScreen) {
+      toast.error('Quick tests are still in progress. Screening unlocks when the due date is reached.');
+      return;
+    }
     try {
       await dispatch(regenerateScreening({ jobId: selectedJobId })).unwrap();
       toast.success('Re-screening started');
@@ -862,143 +1074,27 @@ function ScreeningContent() {
     <CompanyLayout>
       <div className="max-w-7xl mx-auto space-y-8 px-4 pb-12">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI Screening</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Let Gemini AI rank and evaluate your candidates automatically
-          </p>
-        </div>
+        <ScreeningHeader selectedJob={selectedJob} />
 
         {/* Config Card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-              <Brain size={16} className="text-indigo-600" />
-            </div>
-            <h2 className="text-base font-bold text-gray-900">Screening Configuration</h2>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            {/* Job Select */}
-            <div className="sm:col-span-3">
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Job Posting
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedJobId}
-                  onChange={(e) => setSelectedJobId(e.target.value)}
-                  className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-gray-700 focus:bg-white focus:border-indigo-300 outline-none transition-all"
-                >
-                  <option value="">— Select a job —</option>
-                  {jobs
-                    .filter((j) => j.status !== 'draft')
-                    .map((job) => (
-                      <option key={job._id} value={job._id}>
-                        {job.title} ({job.applicantCount ?? 0} applicants)
-                      </option>
-                    ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Top N */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Top N Candidates
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={topN}
-                onChange={(e) => setTopN(Number(e.target.value))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:border-indigo-300 outline-none transition-all"
-              />
-            </div>
-
-            {/* Min Score */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Min Score (0–100)
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={minScore}
-                onChange={(e) => setMinScore(Number(e.target.value))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:border-indigo-300 outline-none transition-all"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-end gap-2">
-              <button
-                onClick={handleStartScreening}
-                disabled={!selectedJobId || starting || isProcessing}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
-              >
-                {starting || isProcessing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    {isProcessing ? 'Processing...' : 'Starting...'}
-                  </>
-                ) : (
-                  <>
-                    <Play size={15} />
-                    Run AI
-                  </>
-                )}
-              </button>
-              {results.length > 0 && (
-                <button
-                  onClick={handleRegenerate}
-                  disabled={loading || isProcessing}
-                  className="px-3 py-2.5 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-60"
-                  title="Re-run screening"
-                >
-                  <RefreshCw size={15} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Session status banner */}
-          {session && (
-            <div
-              className={clsx(
-                'flex items-center gap-3 px-4 py-3 rounded-xl text-sm',
-                session.status === 'completed'
-                  ? 'bg-green-50 text-green-700'
-                  : session.status === 'processing'
-                  ? 'bg-blue-50 text-blue-700'
-                  : session.status === 'failed'
-                  ? 'bg-red-50 text-red-600'
-                  : 'bg-gray-50 text-gray-600'
-              )}
-            >
-              {session.status === 'processing' && (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              )}
-              {session.status === 'completed' && <CheckCircle2 size={16} />}
-              {session.status === 'failed' && <XCircle size={16} />}
-              {session.status === 'pending' && <Clock size={16} />}
-              <span className="font-medium">
-                {session.status === 'processing' &&
-                  `Processing ${session.processedApplicants} / ${session.totalApplicants} candidates...`}
-                {session.status === 'completed' &&
-                  `Screening complete — ${session.processedApplicants} candidates evaluated`}
-                {session.status === 'failed' && `Screening failed: ${session.error}`}
-                {session.status === 'pending' && 'Screening queued, starting shortly...'}
-              </span>
-            </div>
-          )}
-        </div>
+        <ScreeningConfigCard
+          jobs={jobs}
+          selectedJobId={selectedJobId}
+          onJobChange={setSelectedJobId}
+          topN={topN}
+          onTopNChange={setTopN}
+          minScore={minScore}
+          onMinScoreChange={setMinScore}
+          onStart={handleStartScreening}
+          onRegenerate={handleRegenerate}
+          starting={starting}
+          loading={loading}
+          isProcessing={isProcessing}
+          resultsCount={results.length}
+          session={session}
+          assessmentStatus={assessmentStatus}
+          assessmentStatusLoading={assessmentStatusLoading}
+        />
 
         {/* Summary stats (only when results exist) */}
         {results.length > 0 && (
@@ -1067,7 +1163,7 @@ function ScreeningContent() {
                 <h2 className="text-base font-semibold text-gray-900">
                   Ranked Results
                   {selectedJob && (
-                    <span className="text-gray-400 font-normal ml-1">— {selectedJob.title}</span>
+                    <span className="text-gray-400 font-normal ml-1">- {selectedJob.title}</span>
                   )}
                 </h2>
                 {results.length > 0 && (
@@ -1098,7 +1194,8 @@ function ScreeningContent() {
               <BulkActionModal 
                 count={results.length}
                 jobTitle={selectedJob.title}
-                sampleQuestions={results[0]?.evaluation?.reasoning ? [{ question: 'High-Fidelity AI Technical Validation', expectedAnswer: 'Questions are personalized for each talent based on their profile and your job definition.' }] : undefined} // Fallback or first sample
+                sampleQuestions={bulkSampleQuestions || undefined}
+                sampleLoading={bulkSampleLoading}
                 onClose={() => setShowBulkConfirm(false)}
                 onConfirm={handleBulkSendTests}
               />
@@ -1171,3 +1268,4 @@ export default function CompanyScreeningPage() {
     </ProtectedRoute>
   );
 }
+

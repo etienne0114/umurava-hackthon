@@ -114,11 +114,14 @@ export interface Assessment {
   applicantId: string | Applicant;
   questions: Array<{
     question: string;
-    expectedAnswer: string;
+    options?: string[];
+    correctOptionIndex?: number;
+    expectedAnswer?: string;
   }>;
   candidateAnswers?: Array<{
     question: string;
     answer: string;
+    selectedOptionIndex?: number;
   }>;
   grading?: {
     totalScore?: number;
@@ -133,6 +136,11 @@ export interface Assessment {
     gradedAt?: string;
   };
   status: 'pending' | 'completed' | 'expired';
+  timePerQuestionSeconds?: number;
+  timeLimitSeconds?: number;
+  startedAt?: string;
+  timedOut?: boolean;
+  dueAt?: string;
   expiresAt?: string;
   submittedAt?: string;
   createdAt: string;
@@ -152,6 +160,7 @@ export interface ScreeningResult {
     risks: string[];
     recommendation: Recommendation;
     reasoning: string;
+    aiFallback?: boolean;
   };
   scoreBreakdown: {
     skills: number;
@@ -172,6 +181,8 @@ export interface ScreeningSession {
     topN: number;
     minScore: number;
     weights: WeightConfig;
+    batchMode?: boolean;
+    batchSize?: number;
   };
   error?: string;
   startedAt: string;

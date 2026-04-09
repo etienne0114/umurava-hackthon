@@ -10,6 +10,11 @@ The platform follows a three-tier architecture:
 2. **Backend Layer**: Node.js + Express REST API
 3. **Data Layer**: MongoDB database + Gemini AI API
 
+## 1-Page Architecture Diagram
+
+The full system diagram (ASCII) lives in the backend documentation for a single source of truth:
+- **[Architecture Diagram](../../umurava-hackthon-backend/docs/architecture.md)**
+
 ## Component Overview
 
 ### Backend Components

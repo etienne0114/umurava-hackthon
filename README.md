@@ -10,6 +10,7 @@ The modern, responsive, and intuitive recruiter dashboard designed for efficient
 - **Interactive Dashboards**: Real-time visualization of job statistics and candidate engagement.
 - **AI-Powered Insights**: Ranked shortlists with clear, explainable AI reasoning displays.
 - **Multi-Source Ingestion**: Seamless interfaces for file uploads (PDF/CSV/XLSX) and Umurava platform imports.
+- **Human-in-Control**: AI recommendations are advisory; recruiters always make final decisions.
 
 ### Responsive Design
 Built using **Tailwind CSS**, the interface ensures a premium experience across all devices, from desktop monitors to mobile phones, with a breakpoints-optimized layout.
@@ -31,6 +32,9 @@ The frontend employs a robust global state management system using **Redux Toolk
 - **Auth Slice**: Manages secure recruiter/talent sessions and profile persistence.
 - **Jobs Slice**: Orchestrates job creation and management workflows.
 - **Candidates Slice**: Handles local state for candidate lists and screening results.
+
+### AI Decision Flow Summary
+Job requirements and candidate profiles are evaluated by Gemini with explicit weights. The backend computes a weighted match score, ranks candidates, and returns explainable strengths/gaps so recruiters stay in control.
 
 ---
 
@@ -76,6 +80,13 @@ Detailed guides for our frontend strategies are available in the internal docume
 2. **Applicant Hub**: Centralized space for candidate ingestion and status tracking.
 3. **Screening Lab**: Visualize AI scores, breakdowns, and rationale in an interactive board.
 4. **Talent Profile**: Self-service profile management for candidates, including resume parsing.
+
+---
+
+## ✅ Assumptions & Limitations
+- PDF uploads accept one candidate per file.
+- CSV/Excel uploads expect one candidate per row (template provided in the UI).
+- AI output quality depends on the clarity of job requirements and candidate profiles.
 
 ---
 

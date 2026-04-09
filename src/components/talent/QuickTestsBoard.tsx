@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import apiClient from '@/store/api/apiClient';
 import { Assessment, Job } from '@/types';
 import { ClipboardCheck, Clock, CheckCircle2 } from 'lucide-react';
@@ -16,8 +16,12 @@ export function QuickTestsBoard() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
-  const [draftAnswers, setDraftAnswers] = useState<string[]>([]);
+  const [draftSelections, setDraftSelections] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const autoSubmittedRef = useRef(false);
 
   const loadAssessments = async () => {
     try {
@@ -37,22 +41,51 @@ export function QuickTestsBoard() {
     loadAssessments();
   }, []);
 
-  const openAssessment = (assessment: Assessment) => {
-    const initialAnswers = assessment.questions.map((q) => {
+  const openAssessment = async (assessment: Assessment) => {
+    const initialSelections = assessment.questions.map((q) => {
       const existing = assessment.candidateAnswers?.find((a) => a.question === q.question);
-      return existing?.answer || '';
+      if (typeof existing?.selectedOptionIndex === 'number') return existing.selectedOptionIndex;
+      if (existing?.answer && Array.isArray(q.options)) {
+        return q.options.findIndex((opt) => opt === existing.answer);
+      }
+      return -1;
     });
+
     setSelectedAssessment(assessment);
-    setDraftAnswers(initialAnswers);
+    setDraftSelections(initialSelections);
+    setStartedAt(assessment.startedAt || null);
+    setTimeLeft(null);
+    autoSubmittedRef.current = false;
+
+    if (assessment.status !== 'completed') {
+      try {
+        setStarting(true);
+        const res = await apiClient.post(`/assessments/my/${assessment._id}/start`);
+        const data = res.data?.data || {};
+        const started = data.startedAt || assessment.startedAt || new Date().toISOString();
+        setStartedAt(started);
+        const totalSeconds =
+          data.timeLimitSeconds ||
+          assessment.timeLimitSeconds ||
+          assessment.questions.length * (assessment.timePerQuestionSeconds || 60);
+        setTimeLeft(totalSeconds);
+      } catch {
+        toast.error('Failed to start the quick test timer');
+      } finally {
+        setStarting(false);
+      }
+    }
   };
 
-  const submitAssessment = async () => {
+  const submitAssessment = async (autoSubmit: boolean = false) => {
     if (!selectedAssessment) return;
 
-    const hasEmpty = draftAnswers.some((a) => !a.trim());
-    if (hasEmpty) {
-      toast.error('Please answer all questions before submitting');
-      return;
+    if (!autoSubmit) {
+      const hasEmpty = draftSelections.some((idx) => idx === -1 || idx === undefined);
+      if (hasEmpty) {
+        toast.error('Please answer all questions before submitting');
+        return;
+      }
     }
 
     try {
@@ -60,17 +93,50 @@ export function QuickTestsBoard() {
       await apiClient.post(`/assessments/my/${selectedAssessment._id}/submit`, {
         answers: selectedAssessment.questions.map((q, idx) => ({
           question: q.question,
-          answer: draftAnswers[idx],
+          answer: Array.isArray(q.options) && draftSelections[idx] >= 0 ? q.options[draftSelections[idx]] : '',
+          selectedOptionIndex: draftSelections[idx] >= 0 ? draftSelections[idx] : undefined,
         })),
+        autoSubmit,
       });
-      toast.success('Quick test submitted successfully');
+      toast.success(autoSubmit ? 'Time is up. Quick test submitted.' : 'Quick test submitted successfully');
       setSelectedAssessment(null);
+      setStartedAt(null);
+      setTimeLeft(null);
       await loadAssessments();
     } catch (error: any) {
       toast.error(error?.message || 'Failed to submit quick test');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  useEffect(() => {
+    if (!selectedAssessment || selectedAssessment.status === 'completed' || !startedAt) return;
+    const totalSeconds =
+      selectedAssessment.timeLimitSeconds ||
+      selectedAssessment.questions.length * (selectedAssessment.timePerQuestionSeconds || 60);
+    const startTime = new Date(startedAt).getTime();
+
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, totalSeconds - elapsed);
+      setTimeLeft(remaining);
+      if (remaining <= 0 && !autoSubmittedRef.current) {
+        autoSubmittedRef.current = true;
+        submitAssessment(true);
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [selectedAssessment, startedAt]);
+
+  const formatTime = (seconds: number | null) => {
+    if (seconds === null || Number.isNaN(seconds)) return '--:--';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   const pending = assessments.filter((a) => a.status === 'pending');
@@ -104,7 +170,7 @@ export function QuickTestsBoard() {
           <div className="py-16 text-center">
             <ClipboardCheck className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-600 font-semibold">No quick tests yet</p>
-            <p className="text-sm text-gray-400 mt-1">When recruiters send tests, they’ll appear here.</p>
+            <p className="text-sm text-gray-400 mt-1">When recruiters send tests, they'll appear here.</p>
           </div>
         </Card>
       ) : (
@@ -158,6 +224,17 @@ export function QuickTestsBoard() {
                     ? 'Submitted answers'
                     : 'Answer all questions and submit'}
                 </p>
+                {selectedAssessment.status !== 'completed' && (
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">
+                    <Clock size={12} />
+                    Time left: {formatTime(timeLeft)}
+                  </div>
+                )}
+                {selectedAssessment.dueAt && (
+                  <p className="mt-2 text-[11px] text-gray-400">
+                    Due by {new Date(selectedAssessment.dueAt).toLocaleString()}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setSelectedAssessment(null)}
@@ -170,21 +247,37 @@ export function QuickTestsBoard() {
             <div className="p-6 overflow-y-auto space-y-5">
               {selectedAssessment.questions.map((q, idx) => (
                 <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
-                  <p className="text-sm font-semibold text-gray-900 mb-2">
+                  <p className="text-sm font-semibold text-gray-900 mb-3">
                     {idx + 1}. {q.question}
                   </p>
-                  <textarea
-                    value={draftAnswers[idx] || ''}
-                    onChange={(e) => {
-                      const updated = [...draftAnswers];
-                      updated[idx] = e.target.value;
-                      setDraftAnswers(updated);
-                    }}
-                    disabled={selectedAssessment.status === 'completed'}
-                    rows={4}
-                    className="w-full rounded-lg border border-gray-200 bg-white p-3 text-sm focus:border-indigo-300 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500"
-                    placeholder="Type your answer here..."
-                  />
+                  {q.options && q.options.length > 0 ? (
+                    <div className="space-y-2">
+                      {q.options.map((option, optIdx) => (
+                        <label
+                          key={optIdx}
+                          className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 cursor-pointer hover:border-indigo-200"
+                        >
+                          <input
+                            type="radio"
+                            name={`q-${idx}`}
+                            checked={draftSelections[idx] === optIdx}
+                            onChange={() => {
+                              const updated = [...draftSelections];
+                              updated[idx] = optIdx;
+                              setDraftSelections(updated);
+                            }}
+                            disabled={selectedAssessment.status === 'completed' || starting || submitting}
+                            className="text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                      Options are unavailable for this question. Ask the recruiter to resend the test.
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -192,11 +285,11 @@ export function QuickTestsBoard() {
             {selectedAssessment.status !== 'completed' && (
               <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
                 <button
-                  onClick={submitAssessment}
-                  disabled={submitting}
+                  onClick={() => submitAssessment(false)}
+                  disabled={submitting || starting}
                   className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
                 >
-                  {submitting ? 'Submitting...' : 'Submit Quick Test'}
+                  {submitting ? 'Submitting...' : starting ? 'Starting...' : 'Submit Quick Test'}
                 </button>
               </div>
             )}
