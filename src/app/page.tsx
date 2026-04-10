@@ -1,12 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store';
 import { Button } from '@/components/common/Button';
 import { memo } from 'react';
 
 const Home = () => {
-  const router = useRouter();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
   return (
@@ -55,9 +53,7 @@ const Home = () => {
               </p>
               <Button
                 size="lg"
-                onClick={() =>
-                  router.push(user?.role === 'talent' ? '/talent/dashboard' : '/company/dashboard')
-                }
+                href={user?.role === 'talent' ? '/talent/dashboard' : '/company/dashboard'}
                 className="w-full sm:w-auto"
               >
                 Go to Dashboard
@@ -65,10 +61,10 @@ const Home = () => {
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-              <Button size="lg" onClick={() => router.push('/auth/register')} className="w-full sm:w-auto">
+              <Button size="lg" href="/auth/register" className="w-full sm:w-auto">
                 Get Started Free
               </Button>
-              <Button variant="secondary" size="lg" onClick={() => router.push('/auth/login')} className="w-full sm:w-auto">
+              <Button variant="secondary" size="lg" href="/auth/login" className="w-full sm:w-auto">
                 Sign In
               </Button>
             </div>

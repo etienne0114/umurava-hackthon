@@ -316,7 +316,7 @@ function JobDetailContent() {
                     <p className="text-xs text-gray-400 truncate">{a.profile.email}</p>
                   </div>
                   <div className="flex flex-wrap gap-1 hidden sm:flex">
-                    {a.profile.skills.slice(0, 3).map((skill) => (
+                    {a.profile.skills?.slice(0, 3).map((skill) => (
                       <span
                         key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
                         className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-semibold rounded-md"
