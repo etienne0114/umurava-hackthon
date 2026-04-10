@@ -21,7 +21,8 @@ import {
   Globe, 
   Heart,
   ExternalLink,
-  Building2
+  Building2,
+  ArrowRight
 } from 'lucide-react';
 import clsx from 'clsx';
 import apiClient from '@/store/api/apiClient';
@@ -259,15 +260,15 @@ export default function TalentDashboard() {
           </div>
 
           {/* Profile Status Card */}
-          <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 h-64 flex flex-col overflow-hidden">
-            <div className="p-5 flex-1 space-y-4">
+          <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 h-64 flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+            <div className="p-6 flex-1 space-y-4">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
                   {initials}
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">{user?.profile?.name || 'Talent User'}</h3>
-                  <p className="text-xs text-gray-500 font-medium">{user?.profile?.position || 'Software Engineer'}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 truncate">{user?.profile?.name || 'Talent User'}</h3>
+                  <p className="text-xs text-gray-500 font-medium truncate">{user?.profile?.position || 'Software Engineer'}</p>
                 </div>
               </div>
               <p className="text-xs text-gray-600 leading-relaxed italic">
@@ -282,9 +283,9 @@ export default function TalentDashboard() {
                   <span className="text-xs font-bold text-gray-700">Profile Completion</span>
                   <span className="text-xs font-bold text-blue-600">{profileCompletion}%</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-blue-600 transition-all duration-1000 rounded-full" 
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000 rounded-full shadow-sm" 
                     style={{ width: `${profileCompletion}%` }}
                   />
                 </div>
@@ -292,7 +293,7 @@ export default function TalentDashboard() {
             </div>
             <button 
               onClick={() => router.push('/talent/profile')}
-              className="w-full py-4 bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+              className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-sm hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-center space-x-2 shadow-sm"
             >
               <Edit3 className="w-4 h-4" />
               <span>Edit Profile</span>
@@ -300,15 +301,18 @@ export default function TalentDashboard() {
           </div>
         </div>
 
-        {/* Job Recommendations */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-lg font-bold text-gray-900">Job Recommendation</h2>
+          {/* Job Recommendations */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+          <div className="px-6 py-5 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Job Recommendation</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Personalized matches based on your profile</p>
+            </div>
             <button 
               onClick={() => router.push('/jobs')}
-              className="text-blue-600 text-sm font-bold hover:underline"
+              className="text-blue-600 text-sm font-bold hover:underline flex items-center gap-1"
             >
-              See All
+              See All <ArrowRight className="w-4 h-4" />
             </button>
           </div>
            
@@ -349,9 +353,9 @@ export default function TalentDashboard() {
                           </h3>
                           <span className={clsx(
                             "px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-tight",
-                            job.matchScore > 80 ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
+                            (job.matchScore ?? 0) > 80 ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
                           )}>
-                            {job.matchScore > 0 ? `${job.matchScore}% Match` : 'New Job'}
+                            {(job.matchScore ?? 0) > 0 ? `${job.matchScore}% Match` : 'New Job'}
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 font-medium">{job.company || 'Private Company'}</p>
@@ -371,7 +375,7 @@ export default function TalentDashboard() {
                       </p>
                       <div className="flex items-center space-x-3">
                         <button 
-                          onClick={() => handleToggleSave(job._id, job.isSaved)}
+                          onClick={() => handleToggleSave(job._id, job.isSaved ?? false)}
                           className={clsx(
                             "p-2.5 border rounded-xl transition-all",
                             job.isSaved 
@@ -417,14 +421,14 @@ export default function TalentDashboard() {
 
 function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-all">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md hover:border-gray-200 transition-all cursor-pointer">
       <div className="flex items-center space-x-4">
         <div className={clsx("w-12 h-12 rounded-xl flex items-center justify-center bg-gray-50 group-hover:scale-110 transition-transform", color)}>
-          <Icon className="w-6 h-6" />
+          <Icon className="w-6 h-6" strokeWidth={2.5} />
         </div>
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
-          <p className={clsx("text-xl font-black", color)}>{value}</p>
+          <p className={clsx("text-2xl font-black", color)}>{value}</p>
         </div>
       </div>
       <button className="text-gray-300 group-hover:text-blue-600 transition-colors">
