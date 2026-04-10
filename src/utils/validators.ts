@@ -29,9 +29,10 @@ export const applicantSchema = z.object({
     skills: z.array(z.string()),
     experience: z.array(
       z.object({
-        title: z.string(),
+        role: z.string(),
         company: z.string(),
-        duration: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
         description: z.string().optional(),
       })
     ),
@@ -39,7 +40,9 @@ export const applicantSchema = z.object({
       z.object({
         degree: z.string(),
         institution: z.string(),
-        year: z.string(),
+        fieldOfStudy: z.string().optional(),
+        startYear: z.number().optional(),
+        endYear: z.number().optional(),
       })
     ),
   }),

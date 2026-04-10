@@ -13,7 +13,7 @@ export interface LanguageEntry {
 }
 
 export interface ExperienceEntry {
-  title: string;
+  role: string;
   company: string;
   duration?: string;
   description?: string;
@@ -29,6 +29,7 @@ export interface EducationEntry {
   fieldOfStudy?: string;
   startYear?: number;
   endYear?: number;
+  description?: string;
 }
 
 export interface CertificationEntry {
@@ -136,6 +137,10 @@ export interface Job {
   createdBy?: string;
   createdAt: string;
   updatedAt: string;
+  /** Returned by AI recommendation endpoint */
+  matchScore?: number;
+  /** Returned by recommendation endpoint — whether the talent has saved this job */
+  isSaved?: boolean;
 }
 
 export interface Application {
@@ -155,7 +160,7 @@ export interface Applicant {
   jobId: string;
   source: ApplicantSource;
   sourceId?: string;
-  profile: UserProfile & { email: string; summary?: string };
+  profile: UserProfile & { email: string; bio?: string };
   metadata?: {
     fileName?: string;
     uploadedAt?: string;
@@ -164,6 +169,48 @@ export interface Applicant {
   assessmentStatus: 'not_sent' | 'sent' | 'completed';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ScreeningResult {
+  _id: string;
+  rank: number;
+  matchScore: number;
+  scoreBreakdown: {
+    skills: number;
+    experience: number;
+    education: number;
+    relevance: number;
+  };
+  evaluation: {
+    recommendation: Recommendation;
+    reasoning: string;
+    strengths: string[];
+    gaps: string[];
+    risks: string[];
+    aiFallback?: boolean;
+  };
+  applicantId: string | Applicant;
+  jobId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScreeningSession {
+  _id: string;
+  jobId: string;
+  status: SessionStatus;
+  startedAt?: string;
+  completedAt?: string;
+  totalApplicants?: number;
+  processedApplicants?: number;
+  error?: string;
+  options?: {
+    batchSize?: number;
+    batchMode?: boolean;
+    [key: string]: any;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AssessmentQuestion {
