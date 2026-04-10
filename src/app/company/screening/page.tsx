@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -92,7 +92,7 @@ function AssessmentModal({
     assessment.questions.map((q) => ({
       ...q,
       options: Array.isArray(q.options) && q.options.length > 0 ? q.options : ['', '', '', ''],
-      correctOptionIndex: Number.isInteger(q.correctOptionIndex) ? q.correctOptionIndex : 0,
+      correctOptionIndex: Number.isInteger(q.correctOptionIndex) ? q.correctOptionIndex! : 0,
       expectedAnswer: q.expectedAnswer || '',
     }))
   );
@@ -330,15 +330,15 @@ function BulkActionModal({
             )}
             {showPreview && canPreview && (
               <div className="p-4 border-t border-gray-100 max-h-48 overflow-y-auto space-y-3 animate-in slide-in-from-top-2 duration-300">
-                {sampleQuestions.slice(0, 3).map((q, i) => (
+                {sampleQuestions!.slice(0, 3).map((q, i) => (
                   <div key={i} className="space-y-1">
                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter italic-none">Sample Question {i + 1}</p>
                     <p className="text-[11px] font-bold text-gray-600 leading-snug">{q.question}</p>
                   </div>
                 ))}
-                {sampleQuestions.length > 3 && (
+                {sampleQuestions!.length > 3 && (
                   <p className="text-[9px] text-gray-400 text-center font-bold uppercase pt-2 border-t border-gray-100">
-                    And {sampleQuestions.length - 3} more tailored questions...
+                    And {sampleQuestions!.length - 3} more tailored questions...
                   </p>
                 )}
               </div>

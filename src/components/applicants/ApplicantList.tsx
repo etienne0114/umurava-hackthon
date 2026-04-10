@@ -26,7 +26,7 @@ export const ApplicantList: React.FC<ApplicantListProps> = ({
     const matchesSearch =
       applicant.profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       applicant.profile.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      applicant.profile.skills.some((skill) =>
+      (applicant.profile.skills ?? []).some((skill) =>
         skill.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 

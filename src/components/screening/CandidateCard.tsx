@@ -61,11 +61,11 @@ const CandidateCardComponent: React.FC<CandidateCardProps> = ({
         />
       </div>
 
-      {applicant.profile.skills.length > 0 && (
+      {(applicant.profile.skills ?? []).length > 0 && (
         <div className="mb-4">
           <p className="text-xs sm:text-sm font-medium text-gray-800 mb-2">Skills:</p>
           <div className="flex flex-wrap gap-1" role="list" aria-label="Candidate skills">
-            {applicant.profile.skills.slice(0, 6).map((skill) => (
+            {(applicant.profile.skills ?? []).slice(0, 6).map((skill) => (
               <span
                 key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
                 className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
@@ -74,9 +74,9 @@ const CandidateCardComponent: React.FC<CandidateCardProps> = ({
                 {skill.name}
               </span>
             ))}
-            {applicant.profile.skills.length > 6 && (
+            {(applicant.profile.skills ?? []).length > 6 && (
               <span className="px-2 py-1 bg-gray-200 text-gray-800 rounded text-xs">
-                +{applicant.profile.skills.length - 6} more
+                +{(applicant.profile.skills ?? []).length - 6} more
               </span>
             )}
           </div>

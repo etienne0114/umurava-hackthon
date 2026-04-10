@@ -30,11 +30,11 @@ const ApplicantCardComponent: React.FC<ApplicantCardProps> = ({ applicant, onRem
         </span>
       </div>
 
-      {applicant.profile.skills.length > 0 && (
+      {(applicant.profile.skills?.length ?? 0) > 0 && (
         <div className="mb-3">
           <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Skills:</p>
           <div className="flex flex-wrap gap-1">
-            {applicant.profile.skills.slice(0, 5).map((skill) => (
+            {applicant.profile.skills!.slice(0, 5).map((skill) => (
               <span
                 key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
                 className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
@@ -42,20 +42,20 @@ const ApplicantCardComponent: React.FC<ApplicantCardProps> = ({ applicant, onRem
                 {skill.name}
               </span>
             ))}
-            {applicant.profile.skills.length > 5 && (
+            {applicant.profile.skills!.length > 5 && (
               <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                +{applicant.profile.skills.length - 5} more
+                +{applicant.profile.skills!.length - 5} more
               </span>
             )}
           </div>
         </div>
       )}
 
-      {applicant.profile.experience.length > 0 && (
+      {(applicant.profile.experience?.length ?? 0) > 0 && (
         <div className="mb-3">
           <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Latest Experience:</p>
           <p className="text-xs sm:text-sm text-gray-600">
-            {applicant.profile.experience[0].title} at {applicant.profile.experience[0].company}
+            {applicant.profile.experience![0].role} at {applicant.profile.experience![0].company}
           </p>
         </div>
       )}

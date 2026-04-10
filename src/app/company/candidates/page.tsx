@@ -77,9 +77,9 @@ function ApplicantCard({
       </div>
 
       {/* Skills */}
-      {applicant.profile.skills.length > 0 && (
+      {(applicant.profile.skills?.length ?? 0) > 0 && (
         <div className="px-5 pb-3 flex flex-wrap gap-1.5">
-          {applicant.profile.skills.slice(0, 5).map((skill) => (
+          {applicant.profile.skills!.slice(0, 5).map((skill) => (
             <span
               key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
               className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-medium rounded-md"
@@ -87,9 +87,9 @@ function ApplicantCard({
               {skill.name}
             </span>
           ))}
-          {applicant.profile.skills.length > 5 && (
+          {applicant.profile.skills!.length > 5 && (
             <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-medium rounded-md">
-              +{applicant.profile.skills.length - 5} more
+              +{applicant.profile.skills!.length - 5} more
             </span>
           )}
         </div>
@@ -98,23 +98,23 @@ function ApplicantCard({
       {/* Expanded details */}
       {expanded && (
         <div className="border-t border-gray-100 px-5 py-4 space-y-3 bg-gray-50">
-          {applicant.profile.summary && (
+          {applicant.profile.bio && (
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Summary</p>
-              <p className="text-sm text-gray-700">{applicant.profile.summary}</p>
+              <p className="text-sm text-gray-700">{applicant.profile.bio}</p>
             </div>
           )}
-          {applicant.profile.experience.length > 0 && (
+          {(applicant.profile.experience?.length ?? 0) > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Experience</p>
               <div className="space-y-2">
-                {applicant.profile.experience.map((exp, i) => (
+                {applicant.profile.experience!.map((exp, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full mt-1.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{exp.title}</p>
+                      <p className="text-sm font-medium text-gray-800">{exp.role}</p>
                       <p className="text-xs text-gray-500">
-                        {exp.company} · {exp.duration}
+                        {exp.company}{exp.duration ? ` · ${exp.duration}` : exp.startDate ? ` · ${exp.startDate}${exp.endDate ? ` – ${exp.endDate}` : ''}` : ''}
                       </p>
                     </div>
                   </div>
@@ -122,13 +122,13 @@ function ApplicantCard({
               </div>
             </div>
           )}
-          {applicant.profile.education.length > 0 && (
+          {(applicant.profile.education?.length ?? 0) > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Education</p>
               <div className="space-y-1">
-                {applicant.profile.education.map((edu, i) => (
+                {applicant.profile.education!.map((edu, i) => (
                   <p key={i} className="text-sm text-gray-700">
-                    {edu.degree} — {edu.institution}, {edu.year}
+                    {edu.degree} — {edu.institution}{edu.endYear ? `, ${edu.endYear}` : ''}
                   </p>
                 ))}
               </div>
@@ -216,7 +216,7 @@ function CandidatesContent() {
       !search ||
       a.profile.name.toLowerCase().includes(search.toLowerCase()) ||
       a.profile.email.toLowerCase().includes(search.toLowerCase()) ||
-      a.profile.skills.some((skill) => skill.name.toLowerCase().includes(search.toLowerCase()))
+      (a.profile.skills ?? []).some((skill) => skill.name.toLowerCase().includes(search.toLowerCase()))
   );
 
   const activeJobs = jobs.filter((j) => j.status === 'active' || j.status === 'draft');
