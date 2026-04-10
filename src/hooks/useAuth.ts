@@ -7,9 +7,8 @@ import {
   fetchProfile,
   updateProfile,
   clearError,
-  User,
 } from '@/store/slices/authSlice';
-import { UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 
 export const useAuth = (autoFetch: boolean = false) => {
   const dispatch = useAppDispatch();

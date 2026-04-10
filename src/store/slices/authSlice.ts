@@ -12,15 +12,16 @@ import {
 } from '@/types';
 
 export interface ParsedResumeProfile {
-  name: string;
-  position: string;
+  firstName: string;
+  lastName: string;
+  headline: string;
   bio: string;
   phone: string;
+  location: string;
   skills: string[];
-  languages: string[];
+  languages: Array<{ name: string; proficiency: string }>;
   experience: ExperienceEntry[];
   education: EducationEntry[];
-  summary?: string;
   projects?: ProjectEntry[];
   certifications?: CertificationEntry[];
   availability?: Availability;
