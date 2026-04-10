@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExperienceEntry } from '@/store/slices/authSlice';
+import { ExperienceEntry } from '@/types';
 import { Edit2, Trash2, Building2 } from 'lucide-react';
 interface ExperienceListItemProps {
   experience: ExperienceEntry;
@@ -90,7 +90,7 @@ export const ExperienceListItem: React.FC<ExperienceListItemProps> = ({
         <div className="flex items-start justify-between mb-2">
           <div>
             <h3 className="text-lg font-extrabold text-gray-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">
-              {experience.title}
+              {experience.role}
             </h3>
             <p className="text-sm font-semibold text-gray-400 mt-2 flex items-center gap-2">
               <span className="text-gray-900">{experience.company}</span>

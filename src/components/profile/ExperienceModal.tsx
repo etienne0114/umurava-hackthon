@@ -3,7 +3,7 @@ import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Select } from '../common/Select';
 import { RichTextEditor } from '../common/RichTextEditor';
-import { ExperienceEntry } from '@/store/slices/authSlice';
+import { ExperienceEntry } from '@/types';
 import { Calendar } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -29,46 +29,45 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
   initialData,
 }) => {
   const [formData, setFormData] = useState<ExperienceEntry>({
-    title: '',
+    role: '',
     company: '',
-    duration: '',
+    startDate: '',
+    endDate: '',
+    isCurrent: false,
     description: '',
+    technologies: [],
   });
 
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [isCurrent, setIsCurrent] = useState(false);
+
   const [employmentType, setEmploymentType] = useState('Full-time');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
-      const [start, end] = initialData.duration.split(/ – | - | to /i);
-      setStartDate(formatDateForInput(start));
-      if (end && /present|current|now/i.test(end)) {
-        setIsCurrent(true);
-        setEndDate('');
-      } else {
-        setIsCurrent(false);
-        setEndDate(formatDateForInput(end));
-      }
+      setFormData({
+        ...initialData,
+        startDate: initialData.startDate ? formatDateForInputFromStandard(initialData.startDate) : '',
+        endDate: initialData.endDate ? formatDateForInputFromStandard(initialData.endDate) : '',
+      });
     } else {
-      setFormData({ title: '', company: '', duration: '', description: '' });
-      setStartDate('');
-      setEndDate('');
-      setIsCurrent(false);
+      setFormData({ 
+        role: '', 
+        company: '', 
+        startDate: '', 
+        endDate: '', 
+        isCurrent: false, 
+        description: '',
+        technologies: [],
+      });
     }
   }, [initialData, isOpen]);
 
-  const formatDateForInput = (dateStr: string) => {
-    if (!dateStr) return '';
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const match = dateStr.match(/^(\w+)\s+(\d{4})$/);
-    if (!match) return '';
-    const mIdx = months.indexOf(match[1]);
-    return mIdx >= 0 ? `${match[2]}-${String(mIdx+1).padStart(2, '0')}` : '';
+  const formatDateForInputFromStandard = (dateStr: string) => {
+    // Expects YYYY-MM
+    return dateStr;
   };
+
+
 
   const formatDateForDisplay = (inputDate: string) => {
     if (!inputDate) return '';
@@ -79,10 +78,10 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.title.trim()) newErrors.title = 'Job title is required';
+    if (!formData.role.trim()) newErrors.role = 'Job role is required';
     if (!formData.company.trim()) newErrors.company = 'Company name is required';
-    if (!startDate) newErrors.startDate = 'Start date is required';
-    if (!isCurrent && !endDate) newErrors.endDate = 'End date is required';
+    if (!formData.startDate) newErrors.startDate = 'Start date is required';
+    if (!formData.isCurrent && !formData.endDate) newErrors.endDate = 'End date is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -91,12 +90,12 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
   const handleSave = () => {
     if (!validate()) return;
 
-    const start = formatDateForDisplay(startDate);
-    const end = isCurrent ? 'Present' : formatDateForDisplay(endDate);
+    const startStr = formatDateForDisplay(formData.startDate!);
+    const endStr = formData.isCurrent ? 'Present' : formatDateForDisplay(formData.endDate!);
     
     onSave({
       ...formData,
-      duration: `${start} – ${end}`
+      duration: `${startStr} – ${endStr}`
     });
     onClose();
   };
@@ -112,12 +111,12 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
       <div className="space-y-6">
         <div>
           <Input
-            label="Job title"
-            name="title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            label="Job role"
+            name="role"
+            value={formData.role}
+            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
             placeholder="e.g. Senior Flutter Developer"
-            error={errors.title}
+            error={errors.role}
             required
           />
         </div>
@@ -148,8 +147,8 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="month"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 className={clsx(
                   "w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm outline-none transition-all",
                   errors.startDate ? "border-red-300 ring-4 ring-red-50" : "border-gray-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
@@ -165,18 +164,18 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="month"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                disabled={isCurrent}
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                disabled={formData.isCurrent}
                 className={clsx(
                   "w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm outline-none transition-all",
-                  isCurrent ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed" : 
+                  formData.isCurrent ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed" : 
                   errors.endDate ? "border-red-300 ring-4 ring-red-50" : 
                   "border-gray-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
                 )}
               />
             </div>
-            {!isCurrent && errors.endDate && <p className="mt-1.5 text-xs font-semibold text-red-500">{errors.endDate}</p>}
+            {!formData.isCurrent && errors.endDate && <p className="mt-1.5 text-xs font-semibold text-red-500">{errors.endDate}</p>}
           </div>
         </div>
 
@@ -184,8 +183,8 @@ export const ExperienceModal: React.FC<ExperienceModalProps> = ({
           <input
             id="isCurrent"
             type="checkbox"
-            checked={isCurrent}
-            onChange={(e) => setIsCurrent(e.target.checked)}
+            checked={formData.isCurrent}
+            onChange={(e) => setFormData({ ...formData, isCurrent: e.target.checked, endDate: e.target.checked ? '' : formData.endDate })}
             className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
           />
           <label htmlFor="isCurrent" className="text-sm font-medium text-gray-600">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { PlusCircle } from 'lucide-react';
-import { ExperienceEntry } from '@/store/slices/authSlice';
+import { ExperienceEntry } from '@/types';
 import { ExperienceListItem } from './ExperienceListItem';
 
 interface ExperienceSectionProps {
