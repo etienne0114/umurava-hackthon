@@ -49,15 +49,15 @@ export const CompanySidebar: React.FC = () => {
     <aside className="fixed left-0 top-0 w-60 h-screen bg-white border-r border-gray-100 flex flex-col z-20 sidebar-scroll overflow-y-auto">
       {/* Logo */}
       <div className="h-16 px-6 border-b border-gray-100 flex items-center">
-        <div className="flex items-center gap-2.5">
+        <Link href="/company/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-            <span className="text-white font-black text-sm">A</span>
+            <span className="text-white font-black text-sm">U</span>
           </div>
           <div>
-            <p className="text-sm font-black text-gray-900 tracking-tight leading-none">AI Recruit</p>
+            <p className="text-sm font-black text-gray-900 tracking-tight leading-none">Umurava</p>
             <p className="text-[10px] text-gray-400 mt-0.5">Recruiter Portal</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Navigation */}
