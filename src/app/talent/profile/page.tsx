@@ -5,13 +5,14 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import {
   updateProfile,
   ParsedResumeProfile,
-  ExperienceEntry,
 } from '@/store/slices/authSlice';
+import { ExperienceEntry, EducationEntry } from '@/types';
 import {
   SkillEntry,
   LanguageEntry,
   CertificationEntry,
   ProjectEntry,
+  SkillLevel,
 } from '@/types';
 import { TalentLayout } from '@/components/layout/TalentLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -22,15 +23,27 @@ import {
   X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 // Shared Components
 import { CVUploadTrigger } from '@/components/profile/CVUploadTrigger';
 import { ProfileOverviewCard } from '@/components/profile/ProfileOverviewCard';
 import { BioCard, SkillsCard } from '@/components/profile/ProfileSections';
 import { ExperienceSection } from '@/components/profile/ExperienceSection';
 import { ExperienceModal } from '@/components/profile/ExperienceModal';
+import { EducationSection } from '@/components/profile/EducationSection';
+import { EducationModal } from '@/components/profile/EducationModal';
+import { ProjectSection } from '@/components/profile/ProjectSection';
+import { ProjectModal } from '@/components/profile/ProjectModal';
+import { LanguageSection } from '@/components/profile/LanguageSection';
+import { LanguageModal } from '@/components/profile/LanguageModal';
+import { AvailabilitySection } from '@/components/profile/AvailabilitySection';
+import { AvailabilityModal } from '@/components/profile/AvailabilityModal';
+import { SocialLinksSection } from '@/components/profile/SocialLinksSection';
+import { SocialLinksModal } from '@/components/profile/SocialLinksModal';
 import { Modal } from '@/components/common/Modal';
 import { TextArea } from '@/components/common/TextArea';
 import { Input } from '@/components/common/Input';
+import { Select } from '@/components/common/Select';
 
 // ─── CV Upload Banner ─────────────────────────────────────────────────────────
 
@@ -63,11 +76,16 @@ function CVUploadBanner({ onParsed }: { onParsed: (extracted: ParsedResumeProfil
 function ProfilePageContent() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const router = useRouter();
   
   // Modals state
-  const [activeModal, setActiveModal] = useState<'experience' | 'skills' | 'bio' | 'general' | null>(null);
+  const [activeModal, setActiveModal] = useState<'experience' | 'education' | 'project' | 'language' | 'availability' | 'socialLinks' | 'skills' | 'bio' | 'general' | null>(null);
   const [editingExpIdx, setEditingExpIdx] = useState<number | null>(null);
+  const [editingEduIdx, setEditingEduIdx] = useState<number | null>(null);
+  const [editingProjectIdx, setEditingProjectIdx] = useState<number | null>(null);
+  const [editingLangIdx, setEditingLangIdx] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [newSkillLevel, setNewSkillLevel] = useState<SkillLevel>('Intermediate');
 
   // Local Form State (initialized from Redux)
   const [form, setForm] = useState({
@@ -109,17 +127,29 @@ function ProfilePageContent() {
     }
   }, [user]);
 
+  // Called after CV upload completes — Redux state already has the updated user from the
+  // server response, so the useEffect above will re-sync the form automatically.
   const handleCVParsed = useCallback((_extracted: ParsedResumeProfile) => {
-    // Redux updates automatically, but we ensure local state is refreshed if manual merging is needed
-    toast.success('CV Processed: Local state synced with AI extraction');
+    // no-op: the useEffect([user]) handles re-syncing the form
   }, []);
 
   const saveToBackend = async (updates: any) => {
     setSaving(true);
     try {
-      // Calculate completion based on required fields
-      const checks = [updates.name, updates.phone, updates.position, updates.bio, 
-                      updates.skills?.length > 0, updates.experience?.length > 0];
+      // Calculate completion based on Talent Profile Schema Specification components
+      const checks = [
+        updates.name || form.name,
+        updates.phone || form.phone,
+        updates.headline || form.headline,
+        updates.location || form.location,
+        updates.bio || form.bio,
+        (updates.skills || form.skills)?.length > 0,
+        (updates.experience || form.experience)?.length > 0,
+        (updates.education || form.education)?.length > 0,
+        (updates.projects || form.projects)?.length > 0,
+        (updates.languages || form.languages)?.length > 0,
+        !!(updates.availability || form.availability),
+      ];
       const completion = Math.round((checks.filter(Boolean).length / checks.length) * 100);
 
       await dispatch(updateProfile({ ...updates, profileCompletion: completion })).unwrap();
@@ -150,13 +180,67 @@ function ProfilePageContent() {
     saveToBackend({ experience: updated });
   };
 
+  const handleAddEducation = (newEdu: EducationEntry) => {
+    const updated = [newEdu, ...form.education];
+    saveToBackend({ education: updated });
+  };
+
+  const handleEditEducation = (updatedEdu: EducationEntry) => {
+    if (editingEduIdx === null) return;
+    const updated = [...form.education];
+    updated[editingEduIdx] = updatedEdu;
+    saveToBackend({ education: updated });
+    setEditingEduIdx(null);
+  };
+
+  const handleDeleteEducation = (idx: number) => {
+    const updated = form.education.filter((_, i) => i !== idx);
+    saveToBackend({ education: updated });
+  };
+
+  const handleAddProject = (newProject: ProjectEntry) => {
+    const updated = [newProject, ...form.projects];
+    saveToBackend({ projects: updated });
+  };
+
+  const handleEditProject = (updatedProject: ProjectEntry) => {
+    if (editingProjectIdx === null) return;
+    const updated = [...form.projects];
+    updated[editingProjectIdx] = updatedProject;
+    saveToBackend({ projects: updated });
+    setEditingProjectIdx(null);
+  };
+
+  const handleDeleteProject = (idx: number) => {
+    const updated = form.projects.filter((_, i) => i !== idx);
+    saveToBackend({ projects: updated });
+  };
+
+  const handleAddLanguage = (newLang: LanguageEntry) => {
+    const updated = [newLang, ...form.languages];
+    saveToBackend({ languages: updated });
+  };
+
+  const handleEditLanguage = (updatedLang: LanguageEntry) => {
+    if (editingLangIdx === null) return;
+    const updated = [...form.languages];
+    updated[editingLangIdx] = updatedLang;
+    saveToBackend({ languages: updated });
+    setEditingLangIdx(null);
+  };
+
+  const handleDeleteLanguage = (idx: number) => {
+    const updated = form.languages.filter((_, i) => i !== idx);
+    saveToBackend({ languages: updated });
+  };
+
   const handleAddSkill = (skill: string) => {
     const trimmed = skill.trim();
     if (!trimmed) return;
     if (form.skills.some((entry) => entry.name.toLowerCase() === trimmed.toLowerCase())) return;
 
     const updated = [
-      { name: trimmed, level: 'Intermediate' as const },
+      { name: trimmed, level: newSkillLevel },
       ...form.skills,
     ];
     saveToBackend({ skills: updated });
@@ -181,8 +265,7 @@ function ProfilePageContent() {
           <ProfileOverviewCard 
             user={user} 
             onEdit={() => setActiveModal('general')}
-            onViewPublic={() => toast.success('Public view coming soon!')}
-            onParsed={handleCVParsed}
+            onViewPublic={() => router.push('/talent/profile/preview')}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -200,6 +283,42 @@ function ProfilePageContent() {
                 onAdd={() => { setEditingExpIdx(null); setActiveModal('experience'); }}
                 onEdit={(idx) => { setEditingExpIdx(idx); setActiveModal('experience'); }}
                 onDelete={handleDeleteExperience}
+              />
+
+              {/* Education Section */}
+              <EducationSection 
+                education={form.education}
+                onAdd={() => { setEditingEduIdx(null); setActiveModal('education'); }}
+                onEdit={(idx) => { setEditingEduIdx(idx); setActiveModal('education'); }}
+                onDelete={handleDeleteEducation}
+              />
+
+              {/* Projects Section */}
+              <ProjectSection 
+                projects={form.projects}
+                onAdd={() => { setEditingProjectIdx(null); setActiveModal('project'); }}
+                onEdit={(idx) => { setEditingProjectIdx(idx); setActiveModal('project'); }}
+                onDelete={handleDeleteProject}
+              />
+
+              {/* Languages Section */}
+              <LanguageSection 
+                languages={form.languages}
+                onAdd={() => { setEditingLangIdx(null); setActiveModal('language'); }}
+                onEdit={(idx) => { setEditingLangIdx(idx); setActiveModal('language'); }}
+                onDelete={handleDeleteLanguage}
+              />
+
+              {/* Availability Section */}
+              <AvailabilitySection 
+                availability={form.availability}
+                onEdit={() => setActiveModal('availability')}
+              />
+
+              {/* Social Links Section */}
+              <SocialLinksSection 
+                socialLinks={form.socialLinks}
+                onEdit={() => setActiveModal('socialLinks')}
               />
             </div>
 
@@ -236,6 +355,46 @@ function ProfilePageContent() {
           onClose={() => setActiveModal(null)}
           onSave={editingExpIdx !== null ? handleEditExperience : handleAddExperience}
           initialData={editingExpIdx !== null ? form.experience[editingExpIdx] : undefined}
+        />
+
+        {/* Education Modal */}
+        <EducationModal 
+          isOpen={activeModal === 'education'}
+          onClose={() => setActiveModal(null)}
+          onSave={editingEduIdx !== null ? handleEditEducation : handleAddEducation}
+          initialData={editingEduIdx !== null ? form.education[editingEduIdx] : undefined}
+        />
+
+        {/* Project Modal */}
+        <ProjectModal 
+          isOpen={activeModal === 'project'}
+          onClose={() => setActiveModal(null)}
+          onSave={editingProjectIdx !== null ? handleEditProject : handleAddProject}
+          initialData={editingProjectIdx !== null ? form.projects[editingProjectIdx] : undefined}
+        />
+
+        {/* Language Modal */}
+        <LanguageModal 
+          isOpen={activeModal === 'language'}
+          onClose={() => setActiveModal(null)}
+          onSave={editingLangIdx !== null ? handleEditLanguage : handleAddLanguage}
+          initialData={editingLangIdx !== null ? form.languages[editingLangIdx] : undefined}
+        />
+
+        {/* Availability Modal */}
+        <AvailabilityModal 
+          isOpen={activeModal === 'availability'}
+          onClose={() => setActiveModal(null)}
+          onSave={(data) => saveToBackend({ availability: data })}
+          initialData={form.availability}
+        />
+
+        {/* Social Links Modal */}
+        <SocialLinksModal 
+          isOpen={activeModal === 'socialLinks'}
+          onClose={() => setActiveModal(null)}
+          onSave={(data) => saveToBackend({ socialLinks: data })}
+          initialData={form.socialLinks}
         />
 
         {/* Bio Modal */}
@@ -283,6 +442,18 @@ function ProfilePageContent() {
                     }
                   }}
                 />
+                <div className="w-40">
+                  <Select
+                    value={newSkillLevel}
+                    onChange={(e) => setNewSkillLevel(e.target.value as SkillLevel)}
+                    options={[
+                      { value: 'Beginner', label: 'Beginner' },
+                      { value: 'Intermediate', label: 'Intermediate' },
+                      { value: 'Advanced', label: 'Advanced' },
+                      { value: 'Expert', label: 'Expert' },
+                    ]}
+                  />
+                </div>
              </div>
              <p className="text-[10px] text-gray-400 font-medium">Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border">Enter</kbd> to add multiple skills</p>
              <div className="flex flex-wrap gap-2 pt-2">
