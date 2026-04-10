@@ -113,7 +113,7 @@ export const Header: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => router.push('/auth/login')}
+                  href="/auth/login"
                   className="text-xs sm:text-sm"
                   aria-label="Sign in to your account"
                 >
@@ -121,7 +121,7 @@ export const Header: React.FC = () => {
                 </Button>
                 <Button 
                   size="sm" 
-                  onClick={() => router.push('/auth/register')} 
+                  href="/auth/register" 
                   className="text-xs sm:text-sm"
                   aria-label="Create a new account"
                 >

@@ -1,10 +1,12 @@
 import React, { memo } from 'react';
 import clsx from 'clsx';
+import Link from 'next/link';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  href?: string;
 }
 
 const ButtonComponent: React.FC<ButtonProps> = ({
@@ -30,15 +32,25 @@ const ButtonComponent: React.FC<ButtonProps> = ({
     lg: 'px-6 py-3 text-lg',
   };
 
+  const computedClassName = clsx(
+    baseStyles,
+    variantStyles[variant],
+    sizeStyles[size],
+    isLoading && 'opacity-70 cursor-not-allowed',
+    className
+  );
+
+  if (props.href) {
+    return (
+      <Link href={props.href} className={computedClassName}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
     <button
-      className={clsx(
-        baseStyles,
-        variantStyles[variant],
-        sizeStyles[size],
-        isLoading && 'opacity-70 cursor-not-allowed',
-        className
-      )}
+      className={computedClassName}
       disabled={disabled || isLoading}
       aria-busy={isLoading}
       aria-disabled={disabled || isLoading}
