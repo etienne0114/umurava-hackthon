@@ -108,15 +108,15 @@ export default function CompanyDashboard() {
             {/* Page header */}
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-black text-gray-900">
+                <h1 className="text-3xl font-black text-gray-900">
                   Welcome back, {user?.profile?.name?.split(' ')[0]} 👋
                 </h1>
-                <p className="text-gray-400 text-sm mt-0.5">
+                <p className="text-gray-500 text-sm mt-1">
                   Here's your recruitment overview for today
                 </p>
               </div>
-              <Button onClick={() => router.push('/jobs/new')} className="hidden sm:flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
-                <Plus size={16} /> Post New Job
+              <Button onClick={() => router.push('/jobs/new')} className="hidden sm:flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+                <Plus size={18} /> Post New Job
               </Button>
             </div>
 
@@ -167,17 +167,17 @@ export default function CompanyDashboard() {
                 <div
                   key={label}
                   onClick={() => router.push(href)}
-                  className={`bg-white rounded-2xl p-5 border border-gray-100 shadow-sm ring-1 ${ring} cursor-pointer hover:shadow-md transition-all group`}
+                  className={`bg-white rounded-2xl p-6 border border-gray-100 shadow-sm ring-1 ${ring} cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group`}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                      <Icon className={`${color}`} size={20} />
+                    <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm`}>
+                      <Icon className={`${color}`} size={22} strokeWidth={2.5} />
                     </div>
-                    <ArrowRight size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
+                    <ArrowRight size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
                   </div>
-                  <p className={`text-3xl font-black ${color}`}>{value}</p>
-                  <p className="text-xs font-bold text-gray-500 mt-0.5">{label}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
+                  <p className={`text-3xl font-black ${color} mb-1`}>{value}</p>
+                  <p className="text-xs font-bold text-gray-700">{label}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{sub}</p>
                 </div>
               ))}
             </div>
@@ -185,11 +185,11 @@ export default function CompanyDashboard() {
             {/* Middle row: chart + pie + quick actions */}
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Bar chart: applicants per job */}
-              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <div className="flex items-center justify-between mb-5">
+              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="font-bold text-gray-900">Applicants Per Job</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Top 8 job postings</p>
+                    <h2 className="font-bold text-gray-900 text-base">Applicants Per Job</h2>
+                    <p className="text-xs text-gray-500 mt-1">Top 8 job postings by applicant count</p>
                   </div>
                   <button
                     onClick={() => router.push('/company/jobs')}
@@ -248,10 +248,10 @@ export default function CompanyDashboard() {
               </div>
 
               {/* Pie chart: job status breakdown */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-                <div className="mb-4">
-                  <h2 className="font-bold text-gray-900">Job Status</h2>
-                  <p className="text-xs text-gray-400 mt-0.5">Distribution of postings</p>
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                <div className="mb-5">
+                  <h2 className="font-bold text-gray-900 text-base">Job Status</h2>
+                  <p className="text-xs text-gray-500 mt-1">Distribution of all postings</p>
                 </div>
                 {pieData.length > 0 ? (
                   <div className="flex-1">
@@ -299,14 +299,17 @@ export default function CompanyDashboard() {
             {/* Bottom row: recent jobs + quick actions */}
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Recent Jobs list */}
-              <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                  <h2 className="font-bold text-gray-900">Recent Job Postings</h2>
+              <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                  <div>
+                    <h2 className="font-bold text-gray-900 text-base">Recent Job Postings</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Your latest recruitment activities</p>
+                  </div>
                   <button
                     onClick={() => router.push('/company/jobs')}
-                    className="text-xs text-indigo-600 font-bold hover:underline"
+                    className="text-xs text-indigo-600 font-bold hover:underline flex items-center gap-1"
                   >
-                    View all
+                    View all <ArrowRight size={12} />
                   </button>
                 </div>
 
@@ -380,15 +383,15 @@ export default function CompanyDashboard() {
               {/* Quick Actions panel */}
               <div className="space-y-4">
                 {/* CTA card */}
-                <div className="bg-indigo-600 rounded-2xl p-6 text-white shadow-sm">
-                  <Brain size={28} className="mb-3 opacity-90" />
-                  <h3 className="font-bold text-base mb-1">AI Screening</h3>
-                  <p className="text-indigo-100 text-xs mb-4 leading-relaxed">
+                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-md hover:shadow-lg transition-shadow">
+                  <Brain size={32} className="mb-3 opacity-90" />
+                  <h3 className="font-bold text-lg mb-2">AI Screening</h3>
+                  <p className="text-indigo-100 text-xs mb-5 leading-relaxed">
                     Upload candidates and let Gemini AI rank and score them instantly.
                   </p>
                   <button
                     onClick={() => router.push('/company/candidates')}
-                    className="w-full py-2 bg-white text-indigo-700 font-bold text-sm rounded-xl hover:bg-indigo-50 transition-colors"
+                    className="w-full py-2.5 bg-white text-indigo-700 font-bold text-sm rounded-xl hover:bg-indigo-50 transition-colors shadow-sm"
                   >
                     Upload Candidates
                   </button>
