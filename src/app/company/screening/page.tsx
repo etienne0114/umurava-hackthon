@@ -65,7 +65,7 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
       </div>
       <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-indigo-500 rounded-full transition-all duration-700"
+          className="h-full bg-blue-500 rounded-full transition-all duration-700"
           style={{ width: `${value}%` }}
         />
       </div>
@@ -518,7 +518,7 @@ function ResultRow({
         {/* Candidate */}
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
               {applicant?.profile?.name?.charAt(0) || 'C'}
             </div>
             <div>
@@ -576,17 +576,12 @@ function ResultRow({
               {cfg.icon}
               {cfg.label}
             </span>
-            {result.evaluation.aiFallback && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700 border border-amber-100">
-                AI fallback
-              </span>
-            )}
           </div>
         </td>
 
         {/* Action */}
         <td className="px-6 py-4 whitespace-nowrap text-right">
-          <button className="p-2 rounded-xl text-gray-400 hover:bg-white hover:text-indigo-600 transition-all shadow-none hover:shadow-sm">
+          <button className="p-2 rounded-xl text-gray-400 hover:bg-white hover:text-blue-600 transition-all shadow-none hover:shadow-sm">
             <ChevronDown 
               size={18} 
               className={clsx("transition-transform duration-300", expanded && "rotate-180")} 
@@ -604,7 +599,7 @@ function ResultRow({
               <div className="lg:col-span-2 space-y-6">
                 <div>
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                    <Brain size={14} className="text-indigo-500" />
+                    <Brain size={14} className="text-blue-500" />
                     AI Match Reasoning
                   </h4>
                   <p className="text-sm text-gray-600 leading-relaxed bg-gray-50/50 p-6 rounded-2xl border border-gray-100 transition-all group-hover:bg-white">
@@ -663,7 +658,7 @@ function ResultRow({
               {/* Right Column: Score Metrics */}
               <div className="space-y-6">
                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                  <BarChart3 size={14} className="text-indigo-500" />
+                  <BarChart3 size={14} className="text-blue-500" />
                   Performance Metrics
                 </h4>
                 <div className="bg-gray-50/50 rounded-2xl border border-gray-100 p-6 space-y-5 transition-all group-hover:bg-white">
@@ -676,7 +671,7 @@ function ResultRow({
                 <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <ClipboardCheck size={13} className="text-indigo-500" />
+                      <ClipboardCheck size={13} className="text-blue-500" />
                       Quick Test Review
                     </h4>
                     {submittedAssessment?.grading?.totalScore != null && (
@@ -688,7 +683,7 @@ function ResultRow({
 
                   {submittedLoading ? (
                     <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       Loading quick test responses...
                     </div>
                   ) : submittedAssessment?.status === 'completed' ? (
@@ -712,7 +707,7 @@ function ResultRow({
                               </p>
                               {grading && (
                                 <div className="mt-2 flex items-start justify-between gap-3 text-[10px] text-gray-500">
-                                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wider">
+                                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-bold uppercase tracking-wider">
                                     {grading.score}/10
                                   </span>
                                   <span className="flex-1 text-right">{grading.feedback}</span>
@@ -739,13 +734,13 @@ function ResultRow({
                     <button 
                       onClick={handleGenerateTest}
                       disabled={generatingTest}
-                      className="flex-1 py-3 bg-white border-2 border-indigo-100 hover:border-indigo-600 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-md disabled:opacity-50"
+                      className="flex-1 py-3 bg-white border-2 border-blue-100 hover:border-blue-600 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-md disabled:opacity-50"
                     >
                       {generatingTest ? 'AI Thinking...' : 'Send Quick Test'}
                     </button>
                     <button 
                       onClick={handleContact}
-                      className="flex-1 py-3 bg-white border-2 border-indigo-100 hover:border-indigo-600 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-md"
+                      className="flex-1 py-3 bg-white border-2 border-blue-100 hover:border-blue-600 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-md"
                     >
                       Email Talent
                     </button>
@@ -756,7 +751,7 @@ function ResultRow({
                     disabled={hiring || applicant?.status === 'hired'}
                     className={clsx(
                       "w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 disabled:opacity-50",
-                      applicant?.status === 'hired' ? "bg-emerald-500 text-white shadow-emerald-100" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100"
+                      applicant?.status === 'hired' ? "bg-emerald-500 text-white shadow-emerald-100" : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100"
                     )}
                   >
                     {hiring ? 'Processing...' : applicant?.status === 'hired' ? 'Hired Successfully' : 'Hire Talent'}
@@ -783,7 +778,7 @@ function ResultRow({
                           <button 
                             onClick={handleHire}
                             disabled={hiring}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50"
+                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
                           >
                             {hiring ? 'Confirming...' : 'Yes, Confirm Hire'}
                           </button>
@@ -1105,7 +1100,7 @@ function ScreeningContent() {
                   label: 'Average Match',
                   value: `${summaryStats.avgScore}%`,
                   color: 'text-gray-900',
-                  icon: <BarChart3 size={18} className="text-indigo-500" />,
+                  icon: <BarChart3 size={18} className="text-blue-500" />,
                 },
                 {
                   label: 'Highly Rec.',
@@ -1159,7 +1154,7 @@ function ScreeningContent() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Zap size={16} className="text-indigo-500" />
+                <Zap size={16} className="text-blue-500" />
                 <h2 className="text-base font-semibold text-gray-900">
                   Ranked Results
                   {selectedJob && (
@@ -1233,7 +1228,15 @@ function ScreeningContent() {
                     <tbody className="divide-y divide-gray-100 italic-none">
                       {results
                         .slice()
-                        .sort((a, b) => a.rank - b.rank)
+                        .sort((a, b) => {
+                          // Primary sort: rank (ascending)
+                          if (a.rank !== b.rank) {
+                            return a.rank - b.rank;
+                          }
+                          
+                          // Secondary sort: match score (descending) as fallback
+                          return b.matchScore - a.matchScore;
+                        })
                         .map((result) => (
                           <ResultRow 
                             key={result._id} 
