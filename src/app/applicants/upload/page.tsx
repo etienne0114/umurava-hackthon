@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileUploader } from '@/components/applicants/FileUploader';
 import { UmuravaImporter } from '@/components/applicants/UmuravaImporter';
+import { QuickLogin } from '@/components/auth/QuickLogin';
 import { Button } from '@/components/common/Button';
 import { Loader } from '@/components/common/Loader';
 import { Applicant } from '@/types';
@@ -13,6 +14,7 @@ function UploadApplicantsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobId = searchParams.get('jobId');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!jobId) {
@@ -21,13 +23,17 @@ function UploadApplicantsContent() {
     }
   }, [jobId, router]);
 
+  const handleLoginSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   const handleUploadComplete = (applicants: Applicant[]) => {
     toast.success(`Successfully imported ${applicants.length} applicants`);
     router.push(`/jobs/${jobId}`);
   };
 
   const handleImportComplete = (applicants: Applicant[]) => {
-    toast.success(`Successfully imported ${applicants.length} profiles from Umurava`);
+    toast.success(`Successfully imported ${applicants.length} profiles from Platform`);
     router.push(`/jobs/${jobId}`);
   };
 
@@ -46,8 +52,12 @@ function UploadApplicantsContent() {
 
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Upload Applicants</h1>
 
+        {/* Quick Login for Testing */}
+        <QuickLogin onLoginSuccess={handleLoginSuccess} />
+
         <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 max-w-6xl">
         <FileUploader
+          key={refreshKey}
           jobId={jobId}
           maxSize={10 * 1024 * 1024}
           onUploadComplete={handleUploadComplete}

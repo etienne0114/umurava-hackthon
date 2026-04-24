@@ -1,2 +1,4 @@
-Full Name,Email,Phone,Skills,Experience,Education,Summary
-Jane Doe,jane.doe@example.com,+250788000000,"React;TypeScript;Node.js","Frontend Engineer|Acme Ltd|2021-2024|Built scalable web apps","BSc Computer Science|University of Rwanda|2020","Product-focused engineer with 3+ years in web development"
+name,email,phone,skills,experience,education,summary,firstName,lastName,headline,location
+John Doe,john.doe@example.com,+1-555-0101,"JavaScript,React,Node.js","Software Engineer|TechCorp|2020-2023|Built web applications","Bachelor of Computer Science|MIT|2020","Experienced software engineer with 3+ years in web development",John,Doe,Software Engineer,"San Francisco, CA"
+Jane Smith,jane.smith@example.com,+1-555-0102,"Python,Django,AWS","Backend Developer|StartupXYZ|2019-2023|Developed scalable APIs","Master of Computer Science|Stanford|2019","Backend specialist with expertise in cloud technologies",Jane,Smith,Backend Developer,"Palo Alto, CA"
+Mike Johnson,mike.j@example.com,+1-555-0103,"React,TypeScript,CSS","Frontend Developer|WebCorp|2021-2023|Created responsive UIs","Bachelor of Design|UCLA|2021","Frontend developer passionate about user experience",Mike,Johnson,Frontend Developer,"Los Angeles, CA"

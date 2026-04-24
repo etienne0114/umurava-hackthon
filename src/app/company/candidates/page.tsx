@@ -4,8 +4,10 @@ import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchJobs } from '@/store/slices/jobSlice';
 import { fetchApplicants, uploadApplicants, deleteApplicant } from '@/store/slices/applicantSlice';
+import { startScreening, fetchScreeningStatus } from '@/store/slices/screeningSlice';
 import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import type { Applicant } from '@/types';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -20,6 +22,8 @@ import {
   X,
   Eye,
   ChevronLeft,
+  Brain,
+  ArrowRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -37,7 +41,7 @@ function ApplicantCard({
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {applicant.profile.name
               .split(' ')
               .map((n) => n[0])
@@ -63,7 +67,7 @@ function ApplicantCard({
           </span>
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
           >
             <Eye size={15} />
           </button>
@@ -82,7 +86,7 @@ function ApplicantCard({
           {applicant.profile.skills!.slice(0, 5).map((skill) => (
             <span
               key={`${skill.name}-${skill.level}-${skill.yearsOfExperience || 0}`}
-              className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-medium rounded-md"
+              className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[11px] font-medium rounded-md"
             >
               {skill.name}
             </span>
@@ -110,7 +114,7 @@ function ApplicantCard({
               <div className="space-y-2">
                 {applicant.profile.experience!.map((exp, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full mt-1.5 flex-shrink-0" />
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-1.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-gray-800">{exp.role}</p>
                       <p className="text-xs text-gray-500">
@@ -147,10 +151,18 @@ function CandidatesContent() {
   const preselectedJobId = searchParams.get('jobId') || '';
   const { jobs } = useAppSelector((state) => state.jobs);
   const { applicants, loading, uploadProgress, uploadMeta } = useAppSelector((state) => state.applicants);
+  const { session, loading: screeningLoading } = useAppSelector((state) => state.screening);
   const [selectedJobId, setSelectedJobId] = useState<string>(preselectedJobId);
   const [search, setSearch] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [screeningInProgress, setScreeningInProgress] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; candidateId: string; candidateName: string }>({
+    isOpen: false,
+    candidateId: '',
+    candidateName: '',
+  });
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -202,12 +214,85 @@ function CandidatesContent() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Remove this candidate?')) return;
+    const candidate = applicants.find(a => a._id === id);
+    if (!candidate) return;
+    
+    setDeleteModal({
+      isOpen: true,
+      candidateId: id,
+      candidateName: candidate.profile.name,
+    });
+  };
+
+  const confirmDelete = async () => {
     try {
-      await dispatch(deleteApplicant(id)).unwrap();
-      toast.success('Candidate removed');
+      setDeleting(true);
+      await dispatch(deleteApplicant(deleteModal.candidateId)).unwrap();
+      toast.success('Candidate removed successfully');
+      setDeleteModal({ isOpen: false, candidateId: '', candidateName: '' });
     } catch {
       toast.error('Failed to remove candidate');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleStartScreening = async () => {
+    if (!selectedJobId) {
+      toast.error('Please select a job first');
+      return;
+    }
+
+    if (applicants.length === 0) {
+      toast.error('No candidates to screen. Please upload candidates first.');
+      return;
+    }
+
+    try {
+      setScreeningInProgress(true);
+      const screeningSession = await dispatch(startScreening({ 
+        jobId: selectedJobId,
+        options: {
+          topN: Math.min(applicants.length, 20), // Screen up to 20 candidates
+          minScore: 0
+        }
+      })).unwrap();
+
+      toast.success('AI screening started! This may take a few minutes...');
+
+      // Poll for completion
+      const pollInterval = setInterval(async () => {
+        try {
+          const updatedSession = await dispatch(fetchScreeningStatus(screeningSession._id)).unwrap();
+          
+          if (updatedSession.status === 'completed') {
+            clearInterval(pollInterval);
+            setScreeningInProgress(false);
+            toast.success('AI screening completed! Redirecting to results...');
+            router.push(`/company/screening?jobId=${selectedJobId}`);
+          } else if (updatedSession.status === 'failed') {
+            clearInterval(pollInterval);
+            setScreeningInProgress(false);
+            toast.error('Screening failed: ' + (updatedSession.error || 'Unknown error'));
+          }
+          // Session data is automatically updated in Redux store by fetchScreeningStatus
+        } catch (error) {
+          console.error('Error polling screening status:', error);
+        }
+      }, 3000);
+
+      // Cleanup interval after 10 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (screeningInProgress) {
+          setScreeningInProgress(false);
+          toast.error('Screening timeout. Please check the screening page for results.');
+        }
+      }, 600000);
+
+    } catch (error: any) {
+      setScreeningInProgress(false);
+      toast.error(error.message || 'Failed to start screening');
     }
   };
 
@@ -253,7 +338,7 @@ function CandidatesContent() {
             <select
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-gray-700 focus:bg-white focus:border-indigo-300 outline-none transition-all"
+              className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-gray-700 focus:bg-white focus:border-blue-500 outline-none transition-all"
             >
               <option value="">— Choose a job —</option>
               {activeJobs.map((job) => (
@@ -287,8 +372,8 @@ function CandidatesContent() {
           className={clsx(
             'bg-white rounded-2xl border-2 border-dashed transition-colors cursor-pointer p-10 text-center',
             dragOver
-              ? 'border-indigo-400 bg-indigo-50'
-              : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
           )}
         >
           <input
@@ -303,13 +388,13 @@ function CandidatesContent() {
           />
           {uploading ? (
             <div>
-              <div className="inline-block w-10 h-10 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3" />
-              <p className="text-sm font-semibold text-indigo-700">Uploading candidates...</p>
+              <div className="inline-block w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+              <p className="text-sm font-semibold text-blue-700">Uploading candidates...</p>
               {uploadProgress > 0 && (
                 <div className="mt-3 max-w-xs mx-auto">
-                  <div className="h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                      className="h-full bg-blue-600 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -328,12 +413,12 @@ function CandidatesContent() {
             </div>
           ) : (
             <>
-              <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Upload size={22} className="text-indigo-500" />
+              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Upload size={22} className="text-blue-500" />
               </div>
               <p className="text-sm font-semibold text-gray-700">
                 Drag & drop your file here, or{' '}
-                <span className="text-indigo-600">click to browse</span>
+                <span className="text-blue-600">click to browse</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">Supports CSV, Excel (.xlsx/.xls), and PDF</p>
               <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-400">
@@ -353,6 +438,93 @@ function CandidatesContent() {
         {/* Candidates List */}
         {selectedJobId && (
           <div className="space-y-4">
+            {/* Screening Progress Card */}
+            {screeningInProgress && session && (
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">
+                      AI Screening in Progress
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Our AI is analyzing {applicants.length} candidate{applicants.length !== 1 ? 's' : ''} and matching them against job requirements. 
+                      This typically takes 2-5 minutes.
+                    </p>
+                    
+                    {/* Progress Bar */}
+                    {session.totalApplicants && session.processedApplicants !== undefined && (
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                          <span>Progress: {session.processedApplicants} / {session.totalApplicants}</span>
+                          <span>{Math.round((session.processedApplicants / session.totalApplicants) * 100)}%</span>
+                        </div>
+                        <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                            style={{ width: `${(session.processedApplicants / session.totalApplicants) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI Provider Status */}
+                    {session.aiProviderStatus && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+                          <span className="text-blue-600">
+                            Using {session.aiProviderStatus.currentProvider === 'gemini' ? 'Gemini AI' : 'DeepSeek (OpenRouter)'}
+                          </span>
+                        </div>
+                        
+                        {/* Show fallback information */}
+                        {session.aiProviderStatus.fallbackCount > 0 && (
+                          <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
+                            {session.aiProviderStatus.geminiQuotaExhausted 
+                              ? '⚠️ Gemini quota reached, switched to DeepSeek for continued processing'
+                              : `⚠️ Switched to backup AI provider (${session.aiProviderStatus.fallbackCount} times)`
+                            }
+                          </div>
+                        )}
+                        
+                        {/* Show OpenRouter errors */}
+                        {session.aiProviderStatus.openrouterErrors > 0 && (
+                          <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-md">
+                            ⚠️ Backup AI provider encountered {session.aiProviderStatus.openrouterErrors} error{session.aiProviderStatus.openrouterErrors !== 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {screeningInProgress && !session && (
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">
+                      AI Screening in Progress
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Our AI is analyzing {applicants.length} candidate{applicants.length !== 1 ? 's' : ''} and matching them against job requirements. 
+                      This typically takes 2-5 minutes.
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-blue-600">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+                      <span>Processing profiles and generating match scores...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users size={16} className="text-gray-500" />
@@ -362,36 +534,66 @@ function CandidatesContent() {
                     <span className="text-gray-400 font-normal ml-1">— {selectedJob.title}</span>
                   )}
                 </h2>
-                <span className="ml-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">
+                <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
                   {applicants.length}
                 </span>
               </div>
-              <div className="relative">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Search name, email, skills..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:border-indigo-300 outline-none transition-all"
-                />
-                {search && (
+              <div className="flex items-center gap-3">
+                {/* AI Screening Button */}
+                {applicants.length > 0 && (
                   <button
-                    onClick={() => setSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={handleStartScreening}
+                    disabled={screeningInProgress || screeningLoading}
+                    className={clsx(
+                      'flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200',
+                      screeningInProgress || screeningLoading
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:scale-105'
+                    )}
                   >
-                    <X size={13} />
+                    {screeningInProgress || screeningLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                        <span>Screening...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Brain size={16} />
+                        <span>AI Screen</span>
+                        <ArrowRight size={14} />
+                      </>
+                    )}
                   </button>
                 )}
+                
+                {/* Search Input */}
+                <div className="relative">
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search name, email, skills..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
             {loading ? (
               <div className="py-12 text-center">
-                <div className="inline-block w-7 h-7 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                <div className="inline-block w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 <p className="mt-3 text-sm text-gray-500">Loading candidates...</p>
               </div>
             ) : filtered.length === 0 ? (
@@ -420,6 +622,19 @@ function CandidatesContent() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, candidateId: '', candidateName: '' })}
+        onConfirm={confirmDelete}
+        title="Remove Candidate"
+        message={`Are you sure you want to remove ${deleteModal.candidateName} from this job? This action cannot be undone.`}
+        confirmText="Remove Candidate"
+        cancelText="Keep Candidate"
+        type="danger"
+        loading={deleting}
+      />
     </CompanyLayout>
   );
 }
