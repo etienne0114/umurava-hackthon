@@ -1,0 +1,6 @@
+name,email,phone,skills,experience,education,location,summary
+John Smith,john.smith@email.com,+1-555-0101,"JavaScript, React, Node.js","3 years as Frontend Developer at TechCorp","Bachelor's in Computer Science","San Francisco, CA","Experienced frontend developer with expertise in React and modern JavaScript frameworks."
+Sarah Johnson,sarah.johnson@email.com,+1-555-0102,"Python, Django, PostgreSQL","5 years as Backend Developer at DataSoft","Master's in Software Engineering","New York, NY","Backend specialist with strong database design and API development skills."
+Mike Chen,mike.chen@email.com,+1-555-0103,"Java, Spring Boot, AWS","4 years as Full Stack Developer at CloudTech","Bachelor's in Information Technology","Seattle, WA","Full stack developer with cloud architecture experience and DevOps knowledge."
+Emily Rodriguez,emily.rodriguez@email.com,+1-555-0104,"React, TypeScript, GraphQL","2 years as Frontend Developer at StartupXYZ","Bachelor's in Computer Science","Austin, TX","Junior developer with modern frontend technologies and strong problem-solving skills."
+David Kim,david.kim@email.com,+1-555-0105,"Go, Kubernetes, Docker","6 years as DevOps Engineer at ScaleCorp","Master's in Computer Engineering","Los Angeles, CA","Senior DevOps engineer specializing in container orchestration and microservices architecture."
