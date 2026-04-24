@@ -178,7 +178,7 @@ export default function TalentApplicationsPage() {
                           >
                             {job.title}
                           </h3>
-                          <p className="text-sm text-gray-500">{job.company || 'Umurava'}</p>
+                          <p className="text-sm text-gray-500">{job.company || 'Platform'}</p>
                           <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-400">
                             <span className="capitalize">{job.employmentType?.replace('-', ' ')}</span>
                             <span>•</span>

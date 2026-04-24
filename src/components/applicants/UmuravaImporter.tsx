@@ -61,7 +61,7 @@ export const UmuravaImporter: React.FC<UmuravaImporterProps> = ({
 
   return (
     <Card>
-      <h3 className="text-base sm:text-lg font-semibold mb-4">Import from Umurava Platform</h3>
+      <h3 className="text-base sm:text-lg font-semibold mb-4">Import from Platform</h3>
       
       <div className="space-y-4">
         <Input
@@ -69,7 +69,7 @@ export const UmuravaImporter: React.FC<UmuravaImporterProps> = ({
           value={profileIds}
           onChange={(e) => setProfileIds(e.target.value)}
           placeholder="profile-id-1, profile-id-2, profile-id-3"
-          helperText="Enter Umurava profile IDs separated by commas"
+          helperText="Enter Platform profile IDs separated by commas"
         />
 
         <div className="flex justify-end">

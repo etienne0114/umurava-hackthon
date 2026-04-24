@@ -40,7 +40,7 @@ const Home = () => {
             <div className="text-2xl sm:text-3xl mb-3 sm:mb-4">🔄</div>
             <h3 className="text-lg sm:text-xl font-semibold mb-2">Multi-Source Import</h3>
             <p className="text-sm sm:text-base text-gray-600">
-              Import from Umurava Platform or upload CSV, Excel, and PDF files
+              Import from Partner Platforms or upload CSV, Excel, and PDF files
             </p>
           </div>
         </div>
@@ -93,7 +93,7 @@ const Home = () => {
                 <span className="text-blue-600 font-bold text-sm sm:text-base">3</span>
               </div>
               <h4 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Add Candidates</h4>
-              <p className="text-xs sm:text-sm text-gray-600">Upload files or import from Umurava</p>
+              <p className="text-xs sm:text-sm text-gray-600">Upload files or import from partners</p>
             </div>
             <div className="text-center">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">

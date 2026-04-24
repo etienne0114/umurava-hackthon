@@ -70,7 +70,7 @@ export const ApplicantList: React.FC<ApplicantListProps> = ({
             }}
             options={[
               { value: 'all', label: 'All Sources' },
-              { value: 'umurava', label: 'Umurava' },
+              { value: 'umurava', label: 'Platform' },
               { value: 'upload', label: 'Upload' },
             ]}
           />

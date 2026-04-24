@@ -26,7 +26,7 @@ const ApplicantCardComponent: React.FC<ApplicantCardProps> = ({ applicant, onRem
           )}
         </div>
         <span className={`px-2 py-1 rounded text-xs font-medium self-start ${sourceColors[applicant.source]}`}>
-          {applicant.source === 'umurava' ? 'Umurava' : 'Upload'}
+          {applicant.source === 'umurava' ? 'Platform' : 'Upload'}
         </span>
       </div>
 
