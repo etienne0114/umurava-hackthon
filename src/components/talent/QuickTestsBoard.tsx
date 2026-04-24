@@ -7,6 +7,7 @@ import { ClipboardCheck, Clock, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Loader } from '@/components/common/Loader';
 import { Card } from '@/components/common/Card';
+import { useAppSelector } from '@/store';
 
 function getAssessmentJob(assessment: Assessment): Job | null {
   return typeof assessment.jobId === 'object' ? (assessment.jobId as Job) : null;
@@ -23,7 +24,12 @@ export function QuickTestsBoard() {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const autoSubmittedRef = useRef(false);
 
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const isTalent = isAuthenticated && user?.role === 'talent';
+
   const loadAssessments = useCallback(async () => {
+    // Only call this endpoint when the user is confirmed as a talent
+    if (!isTalent) return;
     try {
       setLoading(true);
       const res = await apiClient.get('/assessments/my');
@@ -35,11 +41,12 @@ export function QuickTestsBoard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isTalent]);
 
   useEffect(() => {
-    loadAssessments();
-  }, [loadAssessments]);
+    if (isTalent) loadAssessments();
+    else setLoading(false);
+  }, [loadAssessments, isTalent]);
 
   const openAssessment = async (assessment: Assessment) => {
     const initialSelections = assessment.questions.map((q) => {

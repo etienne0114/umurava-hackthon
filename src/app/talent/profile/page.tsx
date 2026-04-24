@@ -337,7 +337,7 @@ function ProfilePageContent() {
                   <Sparkles size={64} className="text-indigo-600" />
                 </div>
                 <h4 className="font-black text-lg mb-2 text-indigo-600 flex items-center gap-2">
-                   Pro Tip 🚀
+                   Pro Tip
                 </h4>
                 <p className="text-xs text-gray-500 font-medium leading-relaxed">
                   Talents with detailed work descriptions and at least 5 technical skills are 3x more likely to be contacted by top recruiters.
