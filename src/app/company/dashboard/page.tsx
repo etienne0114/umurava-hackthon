@@ -82,11 +82,11 @@ export default function CompanyDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); // Empty dependency array to prevent recreation
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+  }, [fetchDashboard]); // Include fetchDashboard in dependencies
 
   const pieData = data
     ? [

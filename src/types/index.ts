@@ -209,6 +209,15 @@ export interface ScreeningSession {
     batchMode?: boolean;
     [key: string]: any;
   };
+  aiProviderStatus?: {
+    primaryProvider: 'gemini' | 'openrouter';
+    currentProvider: 'gemini' | 'openrouter';
+    fallbackCount: number;
+    geminiQuotaExhausted: boolean;
+    openrouterErrors: number;
+    lastProviderSwitch?: string;
+    providerSwitchReason?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

@@ -41,7 +41,7 @@ const existingToken = typeof window !== 'undefined' ? localStorage.getItem('toke
 const initialState: AuthState = {
   user: null,
   token: existingToken,
-  loading: !!existingToken,
+  loading: false, // Don't start in loading state, let AuthHydrator handle it
   error: null,
   isAuthenticated: false,
 };
@@ -128,12 +128,16 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.loading = false;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
       }
     },
     clearError: (state) => {
       state.error = null;
+    },
+    clearLoading: (state) => {
+      state.loading = false;
     },
     setToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
@@ -179,7 +183,10 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
-        if (typeof window !== 'undefined') localStorage.removeItem('token');
+        state.error = null; // Clear error to avoid showing auth errors on page load
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+        }
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.user = action.payload;
@@ -196,5 +203,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, setToken } = authSlice.actions;
+export const { logout, clearError, clearLoading, setToken } = authSlice.actions;
 export default authSlice.reducer;

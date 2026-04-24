@@ -105,7 +105,7 @@ export default function TalentDashboard() {
     } finally {
       setFetchingJobs(false);
     }
-  }, []);
+  }, []); // Empty dependency array to prevent recreation
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -128,11 +128,11 @@ export default function TalentDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, fetchRecommendations]);
+  }, [fetchRecommendations, activeTab]); // Include fetchRecommendations and activeTab
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]); // Run only once on mount
+  }, [fetchDashboard]); // Include fetchDashboard in dependencies
 
   useEffect(() => {
     if (!loading) {
