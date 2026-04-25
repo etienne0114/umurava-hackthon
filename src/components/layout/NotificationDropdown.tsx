@@ -106,17 +106,22 @@ export const NotificationDropdown: React.FC = () => {
     loadPreferences();
   }, []);
 
+  const [prefsError, setPrefsError] = useState<string | null>(null);
+
   // ── Debounced save to backend (500ms after last change) ──
-  const savePreferences = useCallback((updated: NotificationPreferences) => {
+  const savePreferences = useCallback((updated: NotificationPreferences, previous: NotificationPreferences) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setPrefsSaved(false);
+    setPrefsError(null);
     saveTimerRef.current = setTimeout(async () => {
       try {
         setPrefsSaving(true);
         await apiClient.put('/notifications/preferences', updated);
         setPrefsSaved(true);
       } catch {
-        // Fail silently — preferences will re-sync on next load
+        // Rollback to previous value so the toggle doesn't stay in a false state
+        setPreferences(previous);
+        setPrefsError('Failed to save. Please try again.');
       } finally {
         setPrefsSaving(false);
       }
@@ -129,7 +134,7 @@ export const NotificationDropdown: React.FC = () => {
   ) => {
     setPreferences((prev) => {
       const updated = { ...prev, [key]: value };
-      savePreferences(updated);
+      savePreferences(updated, prev);
       return updated;
     });
   };
@@ -367,6 +372,9 @@ export const NotificationDropdown: React.FC = () => {
                 )}
                 {!prefsSaving && prefsSaved && (
                   <span className="text-[10px] text-green-500 font-medium">Saved ✓</span>
+                )}
+                {!prefsSaving && prefsError && (
+                  <span className="text-[10px] text-red-500 font-medium">{prefsError}</span>
                 )}
               </div>
 

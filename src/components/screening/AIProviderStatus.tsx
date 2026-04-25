@@ -44,7 +44,7 @@ export function AIProviderStatus({
       const data = response.data;
 
       // Map the backend response shape to the component's expected format
-      // Backend returns: { success, data: { gemini: {status, error}, openrouter: {status, error}, overall, timestamp }, meta }
+      // Backend returns: { success, data: { gemini: {status, error}, groq: {status, error}, overall, timestamp }, meta }
       if (data?.success && data?.data) {
         const backendData = data.data;
         const providers: ProviderHealth[] = [];
