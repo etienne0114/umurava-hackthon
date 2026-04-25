@@ -58,11 +58,11 @@ export function AIProviderStatus({
           });
         }
 
-        if (backendData.openrouter) {
+        if (backendData.groq) {
           providers.push({
-            name: 'OpenRouter',
-            status: backendData.openrouter.status as ProviderHealth['status'],
-            error: backendData.openrouter.error,
+            name: 'Groq',
+            status: backendData.groq.status as ProviderHealth['status'],
+            error: backendData.groq.error,
             lastChecked: backendData.timestamp,
           });
         }
@@ -176,8 +176,10 @@ export function AIProviderStatus({
 
   if (compact) {
     const allHealthy = health.providers.every(p => p.status === 'healthy');
-    const anyUnhealthy = health.providers.some(p => p.status === 'unhealthy');
-    
+    // A provider is "functional" when healthy or degraded (rate-limited but key is valid — screening still works)
+    const anyFunctional = health.providers.some(p => p.status === 'healthy' || p.status === ('degraded' as string));
+    const allDown = health.providers.length > 0 && health.providers.every(p => p.status === 'unhealthy');
+
     return (
       <div className="flex items-center gap-2 text-xs">
         {allHealthy ? (
@@ -185,10 +187,15 @@ export function AIProviderStatus({
             <CheckCircle2 size={14} className="text-green-600" />
             <span className="text-green-700">AI Providers: All Healthy</span>
           </>
-        ) : anyUnhealthy ? (
+        ) : allDown ? (
           <>
             <XCircle size={14} className="text-red-600" />
             <span className="text-red-700">AI Providers: Issues Detected</span>
+          </>
+        ) : anyFunctional ? (
+          <>
+            <CheckCircle2 size={14} className="text-green-600" />
+            <span className="text-green-700">AI Providers: Ready</span>
           </>
         ) : (
           <>
