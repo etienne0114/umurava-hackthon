@@ -42,7 +42,7 @@ export const TalentLayout: React.FC<{ children: React.ReactNode }> = ({ children
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-[10px] uppercase font-black text-blue-600 tracking-wider">Talent</p>
-                <p className="text-xs font-bold text-gray-500 truncate max-w-[120px]">{user?.profile?.position || 'Job Seeker'}</p>
+                <p className="text-xs font-bold text-gray-500 truncate max-w-[120px]">{user?.profile?.position || 'Talent'}</p>
               </div>
             </Link>
           </div>

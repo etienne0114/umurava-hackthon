@@ -268,7 +268,9 @@ export default function TalentDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-gray-900 truncate">{user?.profile?.name || 'Talent User'}</h3>
-                  <p className="text-xs text-gray-500 font-medium truncate">{user?.profile?.position || 'Software Engineer'}</p>
+                  {user?.profile?.position && (
+                    <p className="text-xs text-gray-500 font-medium truncate">{user.profile.position}</p>
+                  )}
                 </div>
               </div>
               <p className="text-xs text-gray-600 leading-relaxed italic">
