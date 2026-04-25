@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchJobs } from '@/store/slices/jobSlice';
-import { fetchApplicants, uploadApplicants, deleteApplicant } from '@/store/slices/applicantSlice';
+import { fetchApplicants, uploadApplicants, deleteApplicant, clearAllApplicants } from '@/store/slices/applicantSlice';
 import { startScreening, fetchScreeningStatus } from '@/store/slices/screeningSlice';
 import { CompanyLayout } from '@/components/layout/CompanyLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -163,6 +163,8 @@ function CandidatesContent() {
     candidateName: '',
   });
   const [deleting, setDeleting] = useState(false);
+  const [clearAllModal, setClearAllModal] = useState(false);
+  const [clearingAll, setClearingAll] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -234,6 +236,24 @@ function CandidatesContent() {
       toast.error('Failed to remove candidate');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleClearAll = () => {
+    if (!selectedJobId || applicants.length === 0) return;
+    setClearAllModal(true);
+  };
+
+  const confirmClearAll = async () => {
+    try {
+      setClearingAll(true);
+      const result = await dispatch(clearAllApplicants(selectedJobId)).unwrap();
+      toast.success(`Cleared ${result} candidate${result !== 1 ? 's' : ''} successfully`);
+      setClearAllModal(false);
+    } catch {
+      toast.error('Failed to clear candidates');
+    } finally {
+      setClearingAll(false);
     }
   };
 
@@ -476,24 +496,29 @@ function CandidatesContent() {
                         <div className="flex items-center gap-2 text-xs">
                           <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
                           <span className="text-blue-600">
-                            Using {session.aiProviderStatus.currentProvider === 'gemini' ? 'Gemini AI' : 'DeepSeek (OpenRouter)'}
+                            Using {session.aiProviderStatus.currentProvider === 'gemini' ? 'Gemini AI' : 'Groq AI'}
                           </span>
                         </div>
-                        
-                        {/* Show fallback information */}
+
+                        {/* Fallback notification */}
                         {session.aiProviderStatus.fallbackCount > 0 && (
-                          <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                            {session.aiProviderStatus.geminiQuotaExhausted 
-                              ? '⚠️ Gemini quota reached, switched to DeepSeek for continued processing'
-                              : `⚠️ Switched to backup AI provider (${session.aiProviderStatus.fallbackCount} times)`
+                          <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded-md">
+                            {session.aiProviderStatus.geminiQuotaExhausted
+                              ? '⚠️ Gemini quota reached — switched to Groq for continued processing'
+                              : `⚠️ Switched to Groq AI (${session.aiProviderStatus.fallbackCount} time${session.aiProviderStatus.fallbackCount !== 1 ? 's' : ''})`
                             }
                           </div>
                         )}
-                        
-                        {/* Show OpenRouter errors */}
-                        {session.aiProviderStatus.openrouterErrors > 0 && (
-                          <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-md">
-                            ⚠️ Backup AI provider encountered {session.aiProviderStatus.openrouterErrors} error{session.aiProviderStatus.openrouterErrors !== 1 ? 's' : ''}
+
+                        {/* Groq errors with guidance */}
+                        {(session.aiProviderStatus.groqErrors ?? 0) > 0 && (
+                          <div className="text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-md space-y-1">
+                            <div className="font-semibold">
+                              Groq AI encountered {session.aiProviderStatus.groqErrors} error{session.aiProviderStatus.groqErrors !== 1 ? 's' : ''}
+                            </div>
+                            <div className="text-red-500 mt-1">
+                              Affected candidates received a neutral 50% score. Re-run screening for accurate results.
+                            </div>
                           </div>
                         )}
                       </div>
@@ -539,6 +564,23 @@ function CandidatesContent() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
+                {/* Clear All Button */}
+                {applicants.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    disabled={clearingAll}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={`Clear all ${applicants.length} candidates for this job`}
+                  >
+                    {clearingAll ? (
+                      <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                    <span>Clear All</span>
+                  </button>
+                )}
+
                 {/* AI Screening Button */}
                 {applicants.length > 0 && (
                   <button
@@ -623,7 +665,7 @@ function CandidatesContent() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete single candidate modal */}
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, candidateId: '', candidateName: '' })}
@@ -634,6 +676,19 @@ function CandidatesContent() {
         cancelText="Keep Candidate"
         type="danger"
         loading={deleting}
+      />
+
+      {/* Clear all candidates modal */}
+      <ConfirmationModal
+        isOpen={clearAllModal}
+        onClose={() => setClearAllModal(false)}
+        onConfirm={confirmClearAll}
+        title="Clear All Candidates"
+        message={`This will permanently delete all ${applicants.length} candidate${applicants.length !== 1 ? 's' : ''} for this job, including their assessments and screening results. This cannot be undone.`}
+        confirmText={`Clear All ${applicants.length} Candidates`}
+        cancelText="Keep Candidates"
+        type="danger"
+        loading={clearingAll}
       />
     </CompanyLayout>
   );

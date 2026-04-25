@@ -210,11 +210,11 @@ export interface ScreeningSession {
     [key: string]: any;
   };
   aiProviderStatus?: {
-    primaryProvider: 'gemini' | 'openrouter';
-    currentProvider: 'gemini' | 'openrouter';
+    primaryProvider: 'gemini' | 'groq';
+    currentProvider: 'gemini' | 'groq';
     fallbackCount: number;
     geminiQuotaExhausted: boolean;
-    openrouterErrors: number;
+    groqErrors: number;
     lastProviderSwitch?: string;
     providerSwitchReason?: string;
   };

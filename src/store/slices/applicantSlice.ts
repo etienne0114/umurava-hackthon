@@ -74,6 +74,14 @@ export const deleteApplicant = createAsyncThunk(
   }
 );
 
+export const clearAllApplicants = createAsyncThunk(
+  'applicants/clearAll',
+  async (jobId: string) => {
+    const response = await apiClient.delete(`/applicants/job/${jobId}`);
+    return response.data.data?.deletedCount ?? 0;
+  }
+);
+
 const applicantSlice = createSlice({
   name: 'applicants',
   initialState,
@@ -136,6 +144,19 @@ const applicantSlice = createSlice({
       })
       .addCase(deleteApplicant.fulfilled, (state, action: PayloadAction<string>) => {
         state.applicants = state.applicants.filter((app) => app._id !== action.payload);
+      })
+      .addCase(clearAllApplicants.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(clearAllApplicants.fulfilled, (state) => {
+        state.loading = false;
+        state.applicants = [];
+        state.uploadMeta = null;
+      })
+      .addCase(clearAllApplicants.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to clear applicants';
       });
   },
 });
