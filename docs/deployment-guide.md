@@ -17,7 +17,7 @@ PORT=5000
 NODE_ENV=production
 
 # Database
-MONGODB_URI=mongodb+srv://<db_username>:<db_password>@cluster.mongodb.net/recruitment?retryWrites=true&w=majority
+MONGODB_URI=
 
 # Gemini API
 GEMINI_API_KEY=<your_gemini_api_key>
