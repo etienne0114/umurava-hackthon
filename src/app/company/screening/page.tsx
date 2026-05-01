@@ -943,7 +943,9 @@ function ScreeningContent() {
       if (updated.status === 'completed') {
         clearInterval(interval);
         setPolling(false);
-        dispatch(fetchScreeningResults({ jobId: updated.jobId }));
+        const jobIdStr = typeof updated.jobId === 'string' ? updated.jobId : updated.jobId.toString();
+        console.log('Screening completed, fetching results for job:', jobIdStr);
+        await dispatch(fetchScreeningResults({ jobId: jobIdStr, limit: 500 }));
         toast.success('AI screening complete!');
       } else if (updated.status === 'failed') {
         clearInterval(interval);
@@ -956,7 +958,8 @@ function ScreeningContent() {
 
   useEffect(() => {
     if (selectedJobId) {
-      dispatch(fetchScreeningResults({ jobId: selectedJobId }));
+      console.log('Fetching screening results for job:', selectedJobId);
+      dispatch(fetchScreeningResults({ jobId: selectedJobId, limit: 500 }));
     }
   }, [dispatch, selectedJobId]);
 
